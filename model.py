@@ -15,8 +15,10 @@ from keras import backend as K
 
 from preprocess import TRAIN_DIR,TEST_DIR,FISH_CLASSES,ROWS,COLS,CHANNELS
 
-X_all = np.load('data/train/np_imgs.npy')
-y_all = np.load('data/train/np_labels.npy')
+X_train = np.load('data/train/X_train.npy')
+X_valid = np.load('data/train/X_valid.npy')
+y_train = np.load('data/train/y_train.npy')
+y_valid = np.load('data/train/y_valid.npy')
 
 optimizer = RMSprop(lr=1e-4)
 objective = 'categorical_crossentropy'
