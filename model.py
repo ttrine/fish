@@ -1,18 +1,16 @@
 #Premade 
 import datetime
 import os
+import cv2
+import numpy as np
 
 #Custom
 import submit
 
+X_all = np.load('train/np_imgs.npy')
 
 def main():
-	classes = os.listdir("train")[1:]
-	print classes
-	for i in range(len(classes)):
-		print len(os.listdir('train/' + classes[i]))
 	
-	#submit.sumbit_results()
 
 
 main()
