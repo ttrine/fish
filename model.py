@@ -13,6 +13,9 @@ from keras.optimizers import RMSprop, Adam
 from keras.callbacks import EarlyStopping
 from keras import backend as K
 
+import tensorflow as tf
+tf.python.control_flow_ops = tf
+
 from preprocess import TRAIN_DIR,TEST_DIR,FISH_CLASSES,ROWS,COLS,CHANNELS
 
 X_train = np.load('data/train/X_train.npy')
