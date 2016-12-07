@@ -61,3 +61,9 @@ model.add(Dense(len(FISH_CLASSES)))
 model.add(Activation('sigmoid'))
 
 model.compile(loss=objective, optimizer=optimizer)
+
+
+early_stopping = EarlyStopping(monitor='val_loss', patience=4, verbose=1, mode='auto')        
+        
+model.fit(X_train, y_train, batch_size=64, nb_epoch=1,
+              validation_split=0.2, verbose=1, shuffle=True, callbacks=[early_stopping])
