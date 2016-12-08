@@ -24,7 +24,7 @@ def read_image(src):
     im = cv2.resize(im, (COLS, ROWS), interpolation=cv2.INTER_CUBIC)
     return im
 
-def main():
+def preprocess_train():
 	files = []
 	y_all = []
 
@@ -59,5 +59,17 @@ def main():
 	np.save(TRAIN_DIR+'y_train',y_train)
 	np.save(TRAIN_DIR+'y_valid',y_valid)
 
+def preprocess_test():
+	files = os.listdir(TEST_DIR)
+	X_all = np.ndarray((len(files), ROWS, COLS, CHANNELS), dtype=np.uint8)
+
+	for i,im in enumerate(files):
+		X_all[i] = read_image(TEST_DIR+im)
+
+	print(X_all.shape)
+
+	np.save(TEST_DIR+'X_all',X_all)
+
 if __name__ == '__main__':
-	main()
+	preprocess_train()
+	preprocess_test()
