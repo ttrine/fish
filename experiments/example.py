@@ -16,24 +16,15 @@ from keras import backend as K
 import tensorflow as tf
 tf.python.control_flow_ops = tf
 
-from preprocess import TRAIN_DIR,TEST_DIR,FISH_CLASSES,ROWS,COLS,CHANNELS
-
-X_train = np.load('data/train/X_train.npy')
-X_valid = np.load('data/train/X_valid.npy')
-y_train = np.load('data/train/y_train.npy')
-y_valid = np.load('data/train/y_valid.npy')
+from fish.model_container import ModelContainer
+from preprocess import FISH_CLASSES,ROWS,COLS,CHANNELS
 
 optimizer = RMSprop(lr=1e-4)
 objective = 'categorical_crossentropy'
 
-def center_normalize(x):
-    return (x - K.mean(x)) / K.std(x)
-
 model = Sequential()
 
-model.add(Activation(activation=center_normalize, input_shape=(ROWS, COLS, CHANNELS)))
-
-model.add(Convolution2D(32, 5, 5, border_mode='same', activation='relu', dim_ordering='tf'))
+model.add(Convolution2D(32, 5, 5, border_mode='same', activation='relu', dim_ordering='tf',input_shape=(ROWS, COLS, CHANNELS)))
 model.add(Convolution2D(32, 5, 5, border_mode='same', activation='relu', dim_ordering='tf'))
 model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering='tf'))
 
@@ -60,10 +51,6 @@ model.add(Dropout(0.5))
 model.add(Dense(len(FISH_CLASSES)))
 model.add(Activation('sigmoid'))
 
-model.compile(loss=objective, optimizer=optimizer)
-
-
-early_stopping = EarlyStopping(monitor='val_loss', patience=4, verbose=1, mode='auto')        
-        
-model.fit(X_train, y_train, batch_size=64, nb_epoch=1,
-              validation_split=0.2, verbose=1, shuffle=True, callbacks=[early_stopping])
+if __name__ == '__main__':
+	model = ModelContainer('test',model,lambda x: x)
+	model.train()
