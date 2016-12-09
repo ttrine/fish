@@ -1,8 +1,11 @@
 import os
 import numpy as np
+import csv
 
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
+
+from preprocess import TEST_DIR
 
 class ModelContainer:
 	def __init__(self,name,model,preprocess,optimizer=Adam(lr=1e-5)):
@@ -50,3 +53,18 @@ class ModelContainer:
 
 		self.model.fit(self.train_images, self.train_labels, batch_size=batch_size, nb_epoch=nb_epoch, 
 			validation_data=(self.val_images,self.val_labels), verbose=1, shuffle=True, callbacks=[model_checkpoint])
+
+	def evaluate(self,weight_file,submission_name=None):
+		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
+		model_folder = '../data/models/' + self.name + '/'
+
+		predictions = self.model.predict(self.test_images, verbose=1)
+		if not os.path.exists('data/models/'+self.name):
+			os.makedirs('data/models/'+self.name)
+
+		with open('data/models/'+self.name+'/'+submission_name+'.csv', 'w+') as csvfile:
+			output = csv.writer(csvfile, delimiter=',')
+			output.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
+			filenames = [filename for filename in os.listdir(TEST_DIR) if filename.split('.')[1]!='npy']
+			for i,pred in enumerate(predictions):
+				output.writerow([filenames[i]] + [str(col) for col in pred])

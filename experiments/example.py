@@ -54,3 +54,4 @@ model.add(Activation('sigmoid'))
 if __name__ == '__main__':
 	model = ModelContainer('test',model,lambda x: x)
 	model.train()
+	model.evaluate('test')
