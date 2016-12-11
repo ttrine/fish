@@ -1,26 +1,12 @@
 import numpy as np
-import random
-import pandas as pd
-
-from sklearn.metrics import log_loss
-
-import matplotlib.pyplot as plt
-from matplotlib import ticker
 
 from keras.models import Sequential
-from keras.layers import Dropout, Flatten, Convolution2D, MaxPooling2D, ZeroPadding2D, Dense, Activation
-from keras.optimizers import RMSprop, Adam
-from keras.callbacks import EarlyStopping
+from keras.layers import Dropout, Flatten, Convolution2D, MaxPooling2D, Dense, Activation
+from keras.optimizers import RMSprop
 from keras import backend as K
-
-import tensorflow as tf
-tf.python.control_flow_ops = tf
 
 from fish.model_container import ModelContainer
 from preprocess import FISH_CLASSES,ROWS,COLS,CHANNELS
-
-optimizer = RMSprop(lr=1e-4)
-objective = 'categorical_crossentropy'
 
 model = Sequential()
 
@@ -52,6 +38,5 @@ model.add(Dense(len(FISH_CLASSES)))
 model.add(Activation('sigmoid'))
 
 if __name__ == '__main__':
-	model = ModelContainer('test',model,lambda x: x)
+	model = ModelContainer('test',model,lambda x: x,RMSprop(lr=1e-4))
 	model.train()
-	model.evaluate('test')
