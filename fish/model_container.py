@@ -42,21 +42,22 @@ class ModelContainer:
 	''' Trains the model according to the desired 
 		specifications. '''
 	def train(self, weight_file=None, nb_epoch=40, batch_size=32):
-		model_folder = '../data/models/' + self.name + '/'
+		model_folder = 'data/models/' + self.name + '/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
 
 		if weight_file is not None:
 			self.model.load_weights(model_folder+self.name+weight_file)
-
-		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss', save_best_only=True)
+		
+		print model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5'
+		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss')
 
 		self.model.fit(self.train_images, self.train_labels, batch_size=batch_size, nb_epoch=nb_epoch, 
 			validation_data=(self.val_images,self.val_labels), verbose=1, shuffle=True, callbacks=[model_checkpoint])
 
 	def evaluate(self,weight_file,submission_name=None):
 		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
-		model_folder = '../data/models/' + self.name + '/'
+		model_folder = 'data/models/' + self.name + '/'
 
 		predictions = self.model.predict(self.test_images, verbose=1)
 		if not os.path.exists('data/models/'+self.name):
