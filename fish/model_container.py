@@ -54,6 +54,8 @@ class ModelContainer:
 		self.model.fit(self.train_images, self.train_labels, batch_size=batch_size, nb_epoch=nb_epoch, 
 			validation_data=(self.val_images,self.val_labels), verbose=1, shuffle=True, callbacks=[model_checkpoint])
 
+	''' Runs the test set through the network and 
+		converts the result to regulation format. '''
 	def evaluate(self,weight_file,submission_name=None):
 		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
 		model_folder = '../data/models/' + self.name + '/'
