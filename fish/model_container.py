@@ -61,6 +61,7 @@ class ModelContainer:
 		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
 		model_folder = 'data/models/' + self.name + '/'
 
+		self.model.load_weights('data/models/'+self.name+'/'+weight_file)
 		predictions = self.model.predict(self.test_images, verbose=1)
 		if not os.path.exists('data/models/'+self.name):
 			os.makedirs('data/models/'+self.name)
@@ -69,5 +70,6 @@ class ModelContainer:
 			output = csv.writer(csvfile, delimiter=',')
 			output.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
 			filenames = [filename for filename in os.listdir(TEST_DIR) if filename.split('.')[1]!='npy']
+			filenames.sort()
 			for i,pred in enumerate(predictions):
 				output.writerow([filenames[i]] + [str(col) for col in pred])
