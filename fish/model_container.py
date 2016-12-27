@@ -32,6 +32,9 @@ class ModelContainer:
 		train_images -= mean
 		train_images /= std
 
+		test_images -= mean
+		test_images /= std
+
 		self.train_images = train_images
 		self.train_labels = train_labels
 		self.val_images = val_images
