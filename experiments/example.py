@@ -35,7 +35,7 @@ model.add(Dense(64, activation='relu'))
 model.add(Dropout(0.5))
 
 model.add(Dense(len(FISH_CLASSES)))
-model.add(Activation('sigmoid'))
+model.add(Activation('softmax'))
 
 if __name__ == '__main__':
 	model = ModelContainer('test',model,lambda x: x,RMSprop(lr=1e-4))
