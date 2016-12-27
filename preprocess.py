@@ -64,12 +64,13 @@ def preprocess_test():
 	X_all = np.ndarray((len(files), ROWS, COLS, CHANNELS), dtype=np.uint8)
 
 	for i,im in enumerate(files):
-		X_all[i] = read_image(TEST_DIR+im)
+		if im is not "X_all.npy":
+			X_all[i] = read_image(TEST_DIR+im)
 
 	print(X_all.shape)
 
 	np.save(TEST_DIR+'X_all',X_all)
 
 if __name__ == '__main__':
-	preprocess_train()
+	# preprocess_train()
 	preprocess_test()
