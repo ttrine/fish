@@ -60,12 +60,12 @@ def preprocess_train():
 	np.save(TRAIN_DIR+'y_valid',y_valid)
 
 def preprocess_test():
-	files = os.listdir(TEST_DIR)
+	files = [file for file in os.listdir(TEST_DIR) if file != "X_all.npy"]
+	files.sort()
 	X_all = np.ndarray((len(files), ROWS, COLS, CHANNELS), dtype=np.uint8)
 
 	for i,im in enumerate(files):
-		if im is not "X_all.npy":
-			X_all[i] = read_image(TEST_DIR+im)
+		X_all[i] = read_image(TEST_DIR+im)
 
 	print(X_all.shape)
 
