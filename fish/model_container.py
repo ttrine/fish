@@ -8,37 +8,70 @@ from keras.optimizers import Adam
 from preprocess import TEST_DIR
 
 class ModelContainer:
-	def __init__(self,name,model,preprocess,optimizer=Adam(lr=1e-5)):
+	def __init__(self,name,model,preprocess,optimizer=Adam(lr=1e-5),kind="predictor",cross_val=False):
+		assert kind in ['detector','localizer','aligner','predictor']
 		self.name = name
 		self.preprocess = preprocess
+		self.cross_val = cross_val
 
-		model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+		if kind == 'detector':
+			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+			train_images = np.load('data/train/X_train.npy')
+			train_labels = np.load('data/train/y_train_hasfish.npy')
+			val_images = np.load('data/train/X_valid.npy')
+			val_labels = np.load('data/train/y_valid_hasfish.npy')
+		if kind == 'localizer':
+			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+			train_images = np.load('data/train/X_train.npy')
+			train_labels = np.load('data/train/y_train_hasfish.npy')
+			val_images = np.load('data/train/X_valid.npy')
+			val_labels = np.load('data/train/y_valid_hasfish.npy')
+		if kind == 'predictor':
+			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+			train_images = np.load('data/train/X_train.npy')
+			train_labels = np.load('data/train/y_train.npy')
+			val_images = np.load('data/train/X_valid.npy')
+			val_labels = np.load('data/train/y_valid.npy')
+		
 		self.model = model
-
-		train_images = np.load('data/train/X_train.npy')
-		train_labels = np.load('data/train/y_train.npy')
-		val_images = np.load('data/train/X_valid.npy')
-		val_labels = np.load('data/train/y_valid.npy')
 
 		test_images = np.load('data/test_stg1/X_all.npy')
 
-		train_images = preprocess(train_images).astype('float32')
-		val_images = preprocess(val_images).astype('float32')
+		if cross_val: # unfinished
+			all_images = np.concatenate((train_images,val_images))
+			all_images = preprocess(all_images).astype('float32')
+			
+			mean = np.mean(all_images)
+			std = np.std(all_images)
+
+			all_images -= mean
+			all_images /= std
+
+			all_labels = np.concatenate((train_labels,val_labels))
+
+			self.all_images = all_images
+			self.all_labels = all_labels
+		else:
+			train_images = preprocess(train_images).astype('float32')
+			val_images = preprocess(val_images).astype('float32')
+
+			mean = np.mean(train_images)
+			std = np.std(train_images)
+
+			train_images -= mean
+			train_images /= std
+
+			val_images -= mean
+			val_images /= std
+
+			self.train_images = train_images
+			self.train_labels = train_labels
+			self.val_images = val_images
+			self.val_labels = val_labels
+		
 		test_images = preprocess(test_images).astype('float32')
-
-		mean = np.mean(train_images)
-		std = np.std(train_images)
-
-		train_images -= mean
-		train_images /= std
-
 		test_images -= mean
 		test_images /= std
-
-		self.train_images = train_images
-		self.train_labels = train_labels
-		self.val_images = val_images
-		self.val_labels = val_labels
 
 		self.test_images = test_images
 

@@ -1,7 +1,7 @@
-cd /scratch/hkautz_lab/fish
+cd /home/ttrine/fish/
 salloc -p gpu-debug --gres=gpu:1 -t 01:00:00 --mem=6GB
 srun --pty $SHELL -I
 module load python/2.7.12/b2 blas hdf5/1.8.14 cuda cudnn/7.0 git opencv
 module unload python/2.7.10
-source /scratch/hkautz_lab/fish/venv/bin/activate
+source /home/ttrine/fish/venv/bin/activate
 export THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32
