@@ -53,4 +53,4 @@ sgd = SGD(lr=1e-2, decay=1e-6, momentum=0.9, nesterov=True)
 
 if __name__ == '__main__':
     model = ModelContainer('fish_detector_test',model,lambda x: x,sgd,"localizer")
-    model.train()
+    model.train(nb_epoch=140)
