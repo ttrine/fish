@@ -4,8 +4,20 @@ import csv
 
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
+from keras import backend as K
 
 from preprocess import TEST_DIR,ROWS,COLS
+
+smooth = 1.
+
+def dice_coef(y_true, y_pred):
+	y_true_f = K.flatten(y_true)
+	y_pred_f = K.flatten(y_pred)
+	intersection = K.sum(y_true_f * y_pred_f)
+	return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+
+def dice_coef_loss(y_true, y_pred):
+	return -dice_coef(y_true, y_pred)
 
 class ModelContainer:
 	def __init__(self,name,model,preprocess,optimizer=Adam(lr=1e-5),kind="predictor",cross_val=False):
@@ -21,7 +33,7 @@ class ModelContainer:
 			val_images = np.load('data/train/X_valid.npy')
 			val_labels = np.load('data/train/y_valid_hasfish.npy')
 		if kind == 'localizer':
-			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+			model.compile(optimizer=optimizer, loss=dice_coef_loss, metrics=[dice_coef])
 			train_images = np.load('data/train/X_train_localizer.npy')
 			train_labels_raw = np.load('data/train/y_train_localizer.npy')
 			# Embed labels in 4D tensor
