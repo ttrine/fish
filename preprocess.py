@@ -6,7 +6,7 @@ from keras.utils import np_utils
 
 TRAIN_DIR = 'data/train/'
 TEST_DIR = 'data/test_stg1/'
-FISH_CLASSES = ['ALB', 'BET', 'DOL', 'LAG', 'NoF', 'OTHER', 'SHARK', 'YFT']
+FISH_CLASSES = ['ALB', 'BET', 'DOL', 'LAG', 'OTHER', 'SHARK', 'YFT', 'NoF']
 ROWS = 256  #720
 COLS = 256 #1280
 CHANNELS = 3
@@ -128,8 +128,7 @@ def preprocess_masks():
 		y_all[i] = mask
 
 	X_train, X_valid, y_train, y_valid = train_test_split(X_all, y_all, 
-                                                    test_size=0.2, random_state=23, 
-                                                    stratify=y_all)
+                                                    test_size=0.2, random_state=23)
 	np.save(TRAIN_DIR+'X_train_localizer',X_train)
 	np.save(TRAIN_DIR+'X_valid_localizer',X_valid)
 	np.save(TRAIN_DIR+'y_train_localizer',y_train)
