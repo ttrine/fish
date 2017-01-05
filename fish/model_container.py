@@ -5,7 +5,7 @@ import csv
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
 
-from preprocess import TEST_DIR
+from preprocess import TEST_DIR,ROWS,COLS
 
 class ModelContainer:
 	def __init__(self,name,model,preprocess,optimizer=Adam(lr=1e-5),kind="predictor",cross_val=False):
@@ -22,10 +22,16 @@ class ModelContainer:
 			val_labels = np.load('data/train/y_valid_hasfish.npy')
 		if kind == 'localizer':
 			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
-			train_images = np.load('data/train/X_train.npy')
-			train_labels = np.load('data/train/y_train_hasfish.npy')
-			val_images = np.load('data/train/X_valid.npy')
-			val_labels = np.load('data/train/y_valid_hasfish.npy')
+			train_images = np.load('data/train/X_train_localizer.npy')
+			train_labels_raw = np.load('data/train/y_train_localizer.npy')
+			# Embed labels in 4D tensor
+			train_labels = np.ndarray((train_labels_raw.shape[0], ROWS, COLS, 1), dtype=np.float32)
+			train_labels[:,:,:,0] = train_labels_raw
+
+			val_images = np.load('data/train/X_valid_localizer.npy')
+			val_labels_raw = np.load('data/train/y_valid_localizer.npy')
+			val_labels = np.ndarray((val_labels_raw.shape[0], ROWS, COLS, 1), dtype=np.float32)
+			val_labels[:,:,:,0] = val_labels_raw
 		if kind == 'predictor':
 			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
 			train_images = np.load('data/train/X_train.npy')
