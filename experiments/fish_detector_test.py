@@ -22,6 +22,18 @@ model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
 model.add(Convolution2D(8, 3, 3, activation='relu', dim_ordering='tf'))
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), dim_ordering='tf'))
 
+model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
+model.add(Convolution2D(8, 3, 3, activation='relu', dim_ordering='tf'))
+model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
+model.add(Convolution2D(8, 3, 3, activation='relu', dim_ordering='tf'))
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), dim_ordering='tf'))
+
+model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
+model.add(Convolution2D(8, 3, 3, activation='relu', dim_ordering='tf'))
+model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
+model.add(Convolution2D(8, 3, 3, activation='relu', dim_ordering='tf'))
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), dim_ordering='tf'))
+
 model.add(Flatten())
 model.add(Dense(32, activation='relu'))
 model.add(Dropout(0.5))
