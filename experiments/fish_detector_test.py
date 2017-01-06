@@ -48,4 +48,4 @@ def preprocess(imgs): # Resize to 128x128
 
 if __name__ == '__main__':
     model = ModelContainer('fish_detector_test',model,preprocess,sgd,"detector")
-    model.train()
+    model.train(nb_epoch=100)
