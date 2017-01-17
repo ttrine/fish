@@ -27,28 +27,23 @@ y_boxes = read_boxes()
 
 # Set global constants
 random.seed(1)
-K = 10 # number of images to get
-N = 100 # size of chunk side
 
-# Get K images and their metadata
-indices = random.sample(range(3777),K)
+def chunk(n):
+	# Get random image and its metadata
+	index = random.sample(range(3777),1)[0]
 
-k_imgs = X[indices]
-k_masks = y_masks[indices]
-k_filenames = [filename.split('/')[-1] for filename in y_filenames[indices]]
+	img = X[index]
+	mask = y_masks[index]
+	filename = y_filenames[index].split('/')[-1]
 
-# Insert augmentation here
+	# Insert augmentation here
 
-# Chunk up images. If chunk has coverage, it will be present once for each box it covers.
-img_chunks = []
-chunk_labels = []
+	ncol = int(math.ceil(float(1732)/float(n)))
+	nrow = int(math.ceil(float(974)/float(n)))
 
-ncol = int(math.ceil(float(1732)/float(N)))
-nrow = int(math.ceil(float(974)/float(N)))
-
-for ind in range(K):
-	img = k_imgs[ind]
-	mask = k_masks[ind]
+	# Chunk up image. If chunk has coverage, it will be present once for each box it covers.
+	img_chunks = []
+	chunk_labels = []
 	for j in range(ncol):
 		for i in range(nrow):
 			x1 = j*100
@@ -57,15 +52,14 @@ for ind in range(K):
 			y2 = ((i+1)*100)-1
 			img_chunk = img[y1:y2,x1:x2]
 			if not np.any(img_chunk): continue # skip all-black chunks
-			if img_chunk.shape != (N-1,N-1,3): # skip the rare case in which bottom/right-most chunks are nonblack
+			if img_chunk.shape != (n-1,n-1,3): # skip the rare case in which bottom/right-most chunks are nonblack
 				continue
 			mask_chunk = mask[y1:y2,x1:x2]
 			if not np.any(mask_chunk): # work is done, short-circuit the labeling
 				img_chunks.append(img_chunk)
-				chunk_labels.append([0,0,0,0,0])
+				chunk_labels.append(np.array([0,0,0,0,0]))
 			else: # compute relative top-left and bottom-right bounding-box coords for each fish
-				filename = k_filenames[ind]
-				if filename in y_boxes: # just in case
+				if filename in y_boxes: # just in case it isn't
 					annotations = y_boxes[filename]
 					for annotation in annotations:
 						x_center = int(round(np.mean([x1,x2])))
@@ -75,7 +69,20 @@ for ind in range(K):
 						x_dist_br = annotation['x2'] - x_center
 						y_dist_br = annotation['y2'] - y_center
 						img_chunks.append(img_chunk)
-						chunk_labels.append([x_dist_tr,y_dist_tr,x_dist_br,y_dist_br,1])
+						chunk_labels.append(np.array([x_dist_tr,y_dist_tr,x_dist_br,y_dist_br,1]))
 				else: continue
-for chunk in img_chunks: print chunk
+	return (img_chunks,chunk_labels)
+
+def sample_gen(n=100,samples_per_epoch=1000): # n: side length of chunks
+	chunks = []
+	labels = []
+	while True:
+		img_chunks,chunk_labels = chunk(n)
+		chunks.extend(img_chunks)
+		labels.extend(chunk_labels)
+		if len(chunks) >= samples_per_epoch:
+			yield (np.array(chunks[0:samples_per_epoch]),np.array(labels[0:samples_per_epoch]))
+			chunks = chunks[samples_per_epoch:-1]
+			labels = labels[samples_per_epoch:-1]
+
 # Insert normalization here
