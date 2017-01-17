@@ -81,8 +81,7 @@ def sample_gen(n=100,samples_per_epoch=1000): # n: side length of chunks
 		chunks.extend(img_chunks)
 		labels.extend(chunk_labels)
 		if len(chunks) >= samples_per_epoch:
+			# Insert normalization here
 			yield (np.array(chunks[0:samples_per_epoch]),np.array(labels[0:samples_per_epoch]))
 			chunks = chunks[samples_per_epoch:-1]
 			labels = labels[samples_per_epoch:-1]
-
-# Insert normalization here
