@@ -49,6 +49,12 @@ conv10 = Convolution2D(1, 1, 1, activation='sigmoid')(conv9)
 
 model = Model(input=inputs, output=conv10)
 
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(2, activation='linear'))
+
 sgd = SGD(lr=1e-2, decay=1e-6, momentum=0.9, nesterov=True)
 
 if __name__ == '__main__':

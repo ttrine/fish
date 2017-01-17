@@ -32,18 +32,13 @@ class ModelContainer:
 			train_labels = np.load('data/train/y_train_hasfish.npy')
 			val_images = np.load('data/train/X_valid.npy')
 			val_labels = np.load('data/train/y_valid_hasfish.npy')
-		if kind == 'localizer':
-			model.compile(optimizer=optimizer, loss=dice_coef_loss, metrics=[dice_coef])
+		if kind == 'localizer': # Only load top-left for now
+			model.compile(optimizer=optimizer, loss="mse", metrics=[dice_coef])
 			train_images = np.load('data/train/X_train_localizer.npy')
-			train_labels_raw = np.load('data/train/y_train_localizer.npy')
-			# Embed labels in 4D tensor
-			train_labels = np.ndarray((train_labels_raw.shape[0], ROWS, COLS, 1), dtype=np.float32)
-			train_labels[:,:,:,0] = train_labels_raw
+			train_labels = np.load('data/train/y_train_coord.npy')[:,0:2]
 
 			val_images = np.load('data/train/X_valid_localizer.npy')
-			val_labels_raw = np.load('data/train/y_valid_localizer.npy')
-			val_labels = np.ndarray((val_labels_raw.shape[0], ROWS, COLS, 1), dtype=np.float32)
-			val_labels[:,:,:,0] = val_labels_raw
+			val_labels = np.load('data/train/y_valid_coord.npy')[:,0:2]
 		if kind == 'predictor':
 			model.compile(optimizer=optimizer, loss="categorical_crossentropy")
 			train_images = np.load('data/train/X_train.npy')
