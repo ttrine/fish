@@ -26,7 +26,7 @@ def read_boxes():
 	return y_boxes
 
 class ModelContainer:
-	def __init__(self,name,model,optimizer=Adam(lr=1e-5)):
+	def __init__(self,name,model,optimizer=Adam(lr=1e-5),debug=0):
 		self.name = name
 
 		model.compile(optimizer=optimizer, loss="mse")
@@ -34,10 +34,14 @@ class ModelContainer:
 		
 		# Load raw-ish data, parceled out into splits
 		print "Loading X..."
-		self.X_train = np.load('data/train/X_train.npy')
-		self.X_test = np.load('data/train/X_test.npy')
-		self.X_eval = np.load('data/test_stg1/X.npy')
-
+		if debug: # load test set as train set, don't load eval data
+			self.X_train = np.load('data/train/X_test.npy')
+			self.X_test = np.load('data/train/X_test.npy')
+		else:
+			self.X_train = np.load('data/train/X_train.npy')
+			self.X_test = np.load('data/train/X_test.npy')
+			self.X_eval = np.load('data/test_stg1/X.npy')
+		
 		print "Loading y..."
 		self.y_masks_train = np.load('data/train/y_masks_train.npy')
 		self.y_masks_test = np.load('data/train/y_masks_test.npy')
@@ -47,13 +51,13 @@ class ModelContainer:
 		self.y_classes_test = np.load('data/train/y_classes_test.npy')
 		self.y_boxes = read_boxes()
 
-	def chunk(n):
+	def chunk(self,n,X,y_masks,y_filenames):
 		# Get random image and its metadata
-		index = random.sample(range(len(self.X_train)),1)[0]
+		index = random.sample(range(len(X)),1)[0]
 
-		img = X_train[index]
-		mask = y_masks_train[index]
-		filename = y_filenames_train[index].split('/')[-1]
+		img = X[index]
+		mask = y_masks[index]
+		filename = y_filenames[index].split('/')[-1]
 
 		# Insert augmentation here
 
@@ -67,19 +71,19 @@ class ModelContainer:
 			for i in range(nrow):
 				x1 = j*n
 				y1 = i*n
-				x2 = ((j+1)*n)-1
-				y2 = ((i+1)*n)-1
+				x2 = ((j+1)*n)
+				y2 = ((i+1)*n)
 				img_chunk = img[y1:y2,x1:x2]
 				if not np.any(img_chunk): continue # skip all-black chunks
-				if img_chunk.shape != (n-1,n-1,3): # skip the rare case in which bottom/right-most chunks are nonblack
+				if img_chunk.shape != (n,n,3): # skip the rare case in which bottom/right-most chunks are nonblack
 					continue
 				mask_chunk = mask[y1:y2,x1:x2]
 				if not np.any(mask_chunk): # work is done, short-circuit the labeling
 					img_chunks.append(img_chunk)
 					chunk_labels.append(np.array([0,0,0,0,0]))
 				else: # compute relative top-left and bottom-right bounding-box coords for each fish
-					if filename in y_boxes: # just in case it isn't
-						annotations = y_boxes[filename]
+					if filename in self.y_boxes: # just in case it isn't
+						annotations = self.y_boxes[filename]
 						for annotation in annotations:
 							x_center = int(round(np.mean([x1,x2])))
 							y_center = int(round(np.mean([y1,y2])))
@@ -92,26 +96,32 @@ class ModelContainer:
 					else: continue
 		return (img_chunks,chunk_labels)
 
-	def sample_gen(n,samples_per_epoch): # n: side length of chunks
+	def sample_gen(self,n,samples_per_epoch,X,y_masks,y_filenames): # n: side length of chunks
 		chunks = []
 		labels = []
 		while True:
-			img_chunks,chunk_labels = self.chunk(n)
+			img_chunks,chunk_labels = self.chunk(n,X,y_masks,y_filenames)
 			chunks.extend(img_chunks)
 			labels.extend(chunk_labels)
 			if len(chunks) >= samples_per_epoch:
 				# Randomize, cast, yield
-				shuffle = random.sample(range(1000),1000)
+				shuffle = random.sample(range(samples_per_epoch),samples_per_epoch)
 				chunks = np.array(chunks)[shuffle].astype(np.float32)
 				labels = np.array(labels)[shuffle]
 				yield (chunks,labels)
 				# Keep leftover samples for next epoch
-				chunks = chunks[samples_per_epoch:len(chunks)]
-				labels = labels[samples_per_epoch:len(chunks)]
+				chunks = list(chunks[samples_per_epoch:len(chunks)])
+				labels = list(labels[samples_per_epoch:len(chunks)])
+
+	def isfish_wrapper(self,n,samples_per_epoch,X,y_masks,y_filenames): # Yield only coverage indicator
+		gen = self.sample_gen(n,samples_per_epoch,X,y_masks,y_filenames)
+		while True:
+			chunks, labels = gen.next()
+			yield (chunks,labels[:,-1])
 
 	''' Trains the model according to the desired 
 		specifications. '''
-	def train(self, weight_file=None, n=100, nb_epoch=40, samples_per_epoch=1000):
+	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, samples_per_epoch=1000, nb_val_samples=1000):
 		model_folder = 'data/models/' + self.name + '/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
@@ -119,11 +129,11 @@ class ModelContainer:
 		if weight_file is not None:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
-		print model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5'
 		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss')
-		gen = self.sample_gen(n,samples_per_epoch)
-		self.model.fit_generator(gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=None, verbose=1, callbacks=[model_checkpoint])
+		train_gen = self.isfish_wrapper(n,samples_per_epoch,self.X_train,self.y_masks_train,self.y_filenames_train)
+		test_gen = self.isfish_wrapper(n,nb_val_samples,self.X_test,self.y_masks_test,self.y_filenames_test)
+		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
+			validation_data=test_gen, nb_val_samples=nb_val_samples, verbose=1, callbacks=[model_checkpoint])
 
 	''' Runs the test set through the network and 
 		converts the result to regulation format. '''
