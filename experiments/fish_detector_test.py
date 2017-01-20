@@ -38,4 +38,9 @@ sgd = SGD(lr=1e-2, decay=1e-6, momentum=0.9, nesterov=True)
 
 if __name__ == '__main__':
 	model = ModelContainer('fish_detector_test',model,sgd)
-	model.isfish_train(n=256, nb_epoch=100, samples_per_epoch=1000, nb_val_samples=200)
+
+	import sys
+	if len(sys.argv) > 1: # very very basic
+		model.isfish_train(n=int(sys.argv[1]), nb_epoch=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]), nb_val_samples=int(sys.argv[4]))
+	else:
+		model.isfish_train(n=256, nb_epoch=100, samples_per_epoch=1000, nb_val_samples=200)
