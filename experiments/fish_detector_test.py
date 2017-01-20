@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPooling2D, Dense
+from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPooling2D, Dense, BatchNormalization
 from keras.optimizers import SGD
 from keras import backend as K
 
@@ -7,7 +7,8 @@ from fish.detector_container import ModelContainer
 
 model = Sequential()
 
-model.add(ZeroPadding2D((1, 1), dim_ordering='tf', input_shape=(256, 256, 3)))
+model.add(BatchNormalization(axis=3, input_shape=(256, 256, 3)))
+model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
 model.add(Convolution2D(4, 3, 3, activation='relu', dim_ordering='tf'))
 model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
 model.add(Convolution2D(4, 3, 3, activation='relu', dim_ordering='tf'))
