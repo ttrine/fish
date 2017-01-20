@@ -37,5 +37,5 @@ model.add(Dense(1, activation='softmax'))
 sgd = SGD(lr=1e-2, decay=1e-6, momentum=0.9, nesterov=True)
 
 if __name__ == '__main__':
-	model = ModelContainer('fish_detector_test',model,sgd,debug=0)
+	model = ModelContainer('fish_detector_test',model,sgd)
 	model.isfish_train(n=256, nb_epoch=1000, samples_per_epoch=10000, nb_val_samples=2000)

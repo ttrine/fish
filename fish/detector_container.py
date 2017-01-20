@@ -1,5 +1,6 @@
 import os, csv, random, math
 import numpy as np
+import h5py
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
@@ -33,18 +34,11 @@ class ModelContainer:
 		self.model = model
 		
 		# Load raw-ish data, parceled out into splits
-		print "Loading X..."
-		if debug: # load test set as train set, don't load eval data
-			self.X_train = np.load('data/train/X_test.npy')
-			self.X_test = np.load('data/train/X_test.npy')
-		else:
-			self.X_train = np.load('data/train/X_train.npy')
-			self.X_test = np.load('data/train/X_test.npy')
-			self.X_eval = np.load('data/test_stg1/X.npy')
-		
-		print "Loading y..."
-		self.y_masks_train = np.load('data/train/y_masks_train.npy')
-		self.y_masks_test = np.load('data/train/y_masks_test.npy')
+		data = h5py.File('data/train/data.h5','r')
+		self.X_train = data['X_train']
+		self.X_test = data['X_test']
+		self.y_masks_train = data['y_masks_train']
+		self.y_masks_test = data['y_masks_test']
 		self.y_filenames_train = np.load('data/train/y_filenames_train.npy')
 		self.y_filenames_test = np.load('data/train/y_filenames_test.npy')
 		self.y_classes_train = np.load('data/train/y_classes_train.npy')
