@@ -42,14 +42,12 @@ class ModelContainer:
 		# Load raw-ish data, parceled out into splits
 		data = h5py.File('data/train/data.h5','r')
 		self.X_train = data['X_train']
-		self.X_test = data['X_test']
 		self.y_masks_train = data['y_masks_train']
-		self.y_masks_test = data['y_masks_test']
 		self.y_filenames_train = np.load('data/train/y_filenames_train.npy')
-		self.y_filenames_test = np.load('data/train/y_filenames_test.npy')
 		self.y_classes_train = np.load('data/train/y_classes_train.npy')
-		self.y_classes_test = np.load('data/train/y_classes_test.npy')
 		self.y_boxes = read_boxes()
+		self.X_test = np.load('data/train/X_test_chunks.npy')
+		self.y_test = np.load('data/train/y_test_chunks.npy')
 
 	def chunk(self,n,X,y_masks,y_filenames):
 		# Get random image and its metadata
@@ -139,9 +137,9 @@ class ModelContainer:
 		
 		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss')
 		train_gen = self.isfish_wrapper(n,samples_per_epoch,self.X_train,self.y_masks_train,self.y_filenames_train)
-		test_gen = self.isfish_wrapper(n,nb_val_samples,self.X_test,self.y_masks_test,self.y_filenames_test)
+		y_test = self.y_test[:,-1] # Just finding fish right now
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=test_gen, nb_val_samples=nb_val_samples, verbose=1, callbacks=[model_checkpoint])
+			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
 
 	''' Runs the test set through the network and 
 		converts the result to regulation format. '''
