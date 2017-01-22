@@ -33,7 +33,6 @@ def construct(n):
 	model.add(Dense(64, activation='relu'))
 	model.add(Dropout(0.5))
 	model.add(Dense(32, activation='relu'))
-	model.add(Dropout(0.5))
 	model.add(Dense(1, activation='softmax'))
 
 	return model
