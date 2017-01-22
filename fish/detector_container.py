@@ -99,7 +99,7 @@ class ModelContainer:
 					else: continue
 		return (img_chunks,chunk_labels,filenames)
 
-	def sample_gen(self,n,samples_per_epoch,X,y_masks,y_filenames): # n: side length of chunks
+	def sample_gen(self,n,batch_size,X,y_masks,y_filenames): # n: side length of chunks
 		chunks = []
 		labels = []
 		filenames = []
@@ -108,26 +108,26 @@ class ModelContainer:
 			chunks.extend(img_chunks)
 			labels.extend(chunk_labels)
 			filenames.extend(filename)
-			if len(chunks) >= samples_per_epoch:
+			if len(chunks) >= batch_size:
 				# Randomize, cast, yield
 				shuffle = random.sample(range(len(chunks)),len(chunks))
-				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:samples_per_epoch]
-				sample_labels = np.array(labels)[shuffle][0:samples_per_epoch]
-				sample_filenames = np.array(filenames)[shuffle][0:samples_per_epoch]
+				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
+				sample_labels = np.array(labels)[shuffle][0:batch_size]
+				sample_filenames = np.array(filenames)[shuffle][0:batch_size]
 				yield (sample_chunks,sample_labels)
 				# Keep leftover samples for next epoch
-				chunks = list(chunks[samples_per_epoch:len(chunks)])
-				labels = list(labels[samples_per_epoch:len(labels)])
+				chunks = list(chunks[batch_size:len(chunks)])
+				labels = list(labels[batch_size:len(labels)])
 
-	def isfish_wrapper(self,n,samples_per_epoch,X,y_masks,y_filenames): # Yield only coverage indicator
-		gen = self.sample_gen(n,samples_per_epoch,X,y_masks,y_filenames)
+	def isfish_wrapper(self,n,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
+		gen = self.sample_gen(n,batch_size,X,y_masks,y_filenames)
 		while True:
 			chunks, labels = gen.next()
 			yield (chunks,labels[:,-1])
 
 	''' Trains the model according to the desired 
 		specifications. '''
-	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, samples_per_epoch=500):
+	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
 		model_folder = 'data/models/' + self.name + '/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
@@ -136,7 +136,7 @@ class ModelContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss')
-		train_gen = self.isfish_wrapper(n,samples_per_epoch,self.X_train,self.y_masks_train,self.y_filenames_train)
+		train_gen = self.isfish_wrapper(n,batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
 		y_test = self.y_test[:,-1] # Just finding fish right now
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])

@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
 	if len(sys.argv) > 1: # very very basic
 		model = ModelContainer('fish_detector_test',construct(int(sys.argv[1])),sgd)
-		model.isfish_train(n=int(sys.argv[1]), nb_epoch=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]))
+		model.isfish_train(n=int(sys.argv[1]), nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))
 	else:
 		model = ModelContainer('fish_detector_test',construct(256),sgd)
-		model.isfish_train(n=256, nb_epoch=100, samples_per_epoch=500)
+		model.isfish_train(n=256, nb_epoch=100, batch_size=500, samples_per_epoch=1000)
