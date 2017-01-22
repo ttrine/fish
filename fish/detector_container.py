@@ -127,7 +127,7 @@ class ModelContainer:
 
 	''' Trains the model according to the desired 
 		specifications. '''
-	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, samples_per_epoch=1000, nb_val_samples=1000):
+	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, samples_per_epoch=500):
 		model_folder = 'data/models/' + self.name + '/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)

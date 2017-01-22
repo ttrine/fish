@@ -48,4 +48,4 @@ if __name__ == '__main__':
 		model.isfish_train(n=int(sys.argv[1]), nb_epoch=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]), nb_val_samples=int(sys.argv[4]))
 	else:
 		model = ModelContainer('fish_detector_test',construct(256),sgd)
-		model.isfish_train(n=256, nb_epoch=100, samples_per_epoch=1000, nb_val_samples=200)
+		model.isfish_train(n=256, nb_epoch=100, samples_per_epoch=500)
