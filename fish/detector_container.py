@@ -123,7 +123,10 @@ class ModelContainer:
 		gen = self.sample_gen(n,batch_size,X,y_masks,y_filenames)
 		while True:
 			chunks, labels = gen.next()
-			yield (chunks,labels[:,-1])
+			isfish_labels = np.zeros((len(labels),2))
+			isfish_labels[:,0]=labels[:,-1].astype(np.float32)
+			isfish_labels[:,1]=(~labels[:,-1].astype(bool)).astype(np.float32)
+			yield (chunks,isfish_labels)
 
 	''' Trains the model according to the desired 
 		specifications. '''
@@ -137,7 +140,10 @@ class ModelContainer:
 		
 		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:02d}-{loss:.2f}.hdf5', monitor='loss')
 		train_gen = self.isfish_wrapper(n,batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
-		y_test = self.y_test[:,-1] # Just finding fish right now
+		# Convert test labels to isfish format
+		y_test = np.zeros((len(self.y_test),2))
+		y_test[:,0]=self.y_test[:,-1].astype(np.float32)
+		y_test[:,1]=(~self.y_test[:,-1].astype(bool)).astype(np.float32)
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
 
