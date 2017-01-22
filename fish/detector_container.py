@@ -26,6 +26,12 @@ def read_boxes():
 	y_boxes = d
 	return y_boxes
 
+def overlap(c_x1,c_x2,c_y1,c_y2,a_x1,a_x2,a_y1,a_y2):
+	# Returns true only if regions horizontal and vertical regions both overlap
+	x_overlap = len(set(range(c_x1,c_x2)).intersection(set(range(a_x1,a_x2))))>0
+	y_overlap = len(set(range(c_y1,c_y2)).intersection(set(range(a_y1,a_y2))))>0
+	return x_overlap and y_overlap
+
 class ModelContainer:
 	def __init__(self,name,model,optimizer=Adam(lr=1e-5),debug=0):
 		self.name = name
@@ -61,6 +67,7 @@ class ModelContainer:
 		# Chunk up image. If chunk has coverage, it will be present once for each box it covers.
 		img_chunks = []
 		chunk_labels = []
+		filenames = [] # For easier debugging
 		for j in range(ncol):
 			for i in range(nrow):
 				x1 = j*n
@@ -75,37 +82,44 @@ class ModelContainer:
 				if not np.any(mask_chunk): # work is done, short-circuit the labeling
 					img_chunks.append(img_chunk)
 					chunk_labels.append(np.array([0,0,0,0,0]))
+					filenames.append(filename)
 				else: # compute relative top-left and bottom-right bounding-box coords for each fish
 					if filename in self.y_boxes: # just in case it isn't
 						annotations = self.y_boxes[filename]
 						for annotation in annotations:
-							x_center = int(round(np.mean([x1,x2])))
-							y_center = int(round(np.mean([y1,y2])))
-							x_dist_tr = annotation['x1'] - x_center
-							y_dist_tr = annotation['y1'] - y_center
-							x_dist_br = annotation['x2'] - x_center
-							y_dist_br = annotation['y2'] - y_center
-							img_chunks.append(img_chunk)
-							chunk_labels.append(np.array([x_dist_tr,y_dist_tr,x_dist_br,y_dist_br,1]))
+							if overlap(x1,x2,y1,y2,annotation['x1'],annotation['x2'],annotation['y1'],annotation['y2']):
+								# only add annotation if fish is in chunk
+								x_center = int(round(np.mean([x1,x2])))
+								y_center = int(round(np.mean([y1,y2])))
+								x_dist_tr = annotation['x1'] - x_center
+								y_dist_tr = annotation['y1'] - y_center
+								x_dist_br = annotation['x2'] - x_center
+								y_dist_br = annotation['y2'] - y_center
+								img_chunks.append(img_chunk)
+								chunk_labels.append(np.array([x_dist_tr,y_dist_tr,x_dist_br,y_dist_br,1]))
+								filenames.append(filename)
 					else: continue
-		return (img_chunks,chunk_labels)
+		return (img_chunks,chunk_labels,filenames)
 
 	def sample_gen(self,n,samples_per_epoch,X,y_masks,y_filenames): # n: side length of chunks
 		chunks = []
 		labels = []
+		filenames = []
 		while True:
-			img_chunks,chunk_labels = self.chunk(n,X,y_masks,y_filenames)
+			img_chunks,chunk_labels,filename = self.chunk(n,X,y_masks,y_filenames)
 			chunks.extend(img_chunks)
 			labels.extend(chunk_labels)
+			filenames.extend(filename)
 			if len(chunks) >= samples_per_epoch:
 				# Randomize, cast, yield
-				shuffle = random.sample(range(samples_per_epoch),samples_per_epoch)
-				chunks = np.array(chunks)[shuffle].astype(np.float32)
-				labels = np.array(labels)[shuffle]
-				yield (chunks,labels)
+				shuffle = random.sample(range(len(chunks)),len(chunks))
+				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:samples_per_epoch]
+				sample_labels = np.array(labels)[shuffle][0:samples_per_epoch]
+				sample_filenames = np.array(filenames)[shuffle][0:samples_per_epoch]
+				yield (sample_chunks,sample_labels)
 				# Keep leftover samples for next epoch
 				chunks = list(chunks[samples_per_epoch:len(chunks)])
-				labels = list(labels[samples_per_epoch:len(chunks)])
+				labels = list(labels[samples_per_epoch:len(labels)])
 
 	def isfish_wrapper(self,n,samples_per_epoch,X,y_masks,y_filenames): # Yield only coverage indicator
 		gen = self.sample_gen(n,samples_per_epoch,X,y_masks,y_filenames)
