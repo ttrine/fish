@@ -8,7 +8,7 @@ from fish.detector_container import ModelContainer
 def construct(n):
 	model = Sequential()
 
-	model.add(BatchNormalization(axis=3, input_shape=(n, n, 3)))
+	model.add(BatchNormalization(input_shape=(n, n, 3)))
 	model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
 	model.add(Convolution2D(4, 3, 3, activation='relu', dim_ordering='tf'))
 	model.add(ZeroPadding2D((1, 1), dim_ordering='tf'))
