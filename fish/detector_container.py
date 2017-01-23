@@ -8,8 +8,6 @@ from keras import backend as K
 
 from preprocess import TEST_DIR
 
-random.seed(1)
-
 def read_boxes():
 	import csv
 	y_boxes_file = open("data/train/y_boxes.csv",'rb')
@@ -33,11 +31,13 @@ def overlap(c_x1,c_x2,c_y1,c_y2,a_x1,a_x2,a_y1,a_y2):
 	return x_overlap and y_overlap
 
 class ModelContainer:
-	def __init__(self,name,model,optimizer=Adam(lr=1e-5),debug=0):
+	def __init__(self,name,model,n,optimizer=Adam(lr=1e-5)):
 		self.name = name
 
 		model.compile(optimizer=optimizer, loss="mse")
 		self.model = model
+
+		self.n = n
 		
 		# Load raw-ish data, parceled out into splits
 		data = h5py.File('data/train/data.h5','r')
@@ -49,18 +49,15 @@ class ModelContainer:
 		self.X_test = np.load('data/train/X_test_chunks.npy')
 		self.y_test = np.load('data/train/y_test_chunks.npy')
 
-	def chunk(self,n,X,y_masks,y_filenames):
-		# Get random image and its metadata
-		index = random.sample(range(len(X)),1)[0]
+		eval_data = h5py.File("data/test_stg1/eval_data.h5",'r')
+		self.X_eval = eval_data['X']
+		self.filenames_eval = np.load("data/test_stg1/y_filenames.npy")
 
-		img = X[index]
-		mask = y_masks[index]
-		filename = y_filenames[index].split('/')[-1]
-
+	def chunk(self,img,mask,filename):
 		# Insert augmentation here
 
-		ncol = int(math.ceil(float(1732)/float(n)))
-		nrow = int(math.ceil(float(974)/float(n)))
+		ncol = int(math.ceil(float(1732)/float(self.n)))
+		nrow = int(math.ceil(float(974)/float(self.n)))
 
 		# Chunk up image. If chunk has coverage, it will be present once for each box it covers.
 		img_chunks = []
@@ -68,13 +65,13 @@ class ModelContainer:
 		filenames = [] # For easier debugging
 		for j in range(ncol):
 			for i in range(nrow):
-				x1 = j*n
-				y1 = i*n
-				x2 = ((j+1)*n)
-				y2 = ((i+1)*n)
+				x1 = j*self.n
+				y1 = i*self.n
+				x2 = ((j+1)*self.n)
+				y2 = ((i+1)*self.n)
 				img_chunk = img[y1:y2,x1:x2]
 				if not np.any(img_chunk): continue # skip all-black chunks
-				if img_chunk.shape != (n,n,3): # skip the rare case in which bottom/right-most chunks are nonblack
+				if img_chunk.shape != (self.n,self.n,3): # skip the rare case in which bottom/right-most chunks are nonblack
 					continue
 				mask_chunk = mask[y1:y2,x1:x2]
 				if not np.any(mask_chunk): # work is done, short-circuit the labeling
@@ -99,12 +96,39 @@ class ModelContainer:
 					else: continue
 		return (img_chunks,chunk_labels,filenames)
 
-	def sample_gen(self,n,batch_size,X,y_masks,y_filenames): # n: side length of chunks
+	def chunk_eval(self,img): # Doesn't require a mask
+		# Insert augmentation here?
+
+		ncol = int(math.ceil(float(1732)/float(self.n)))
+		nrow = int(math.ceil(float(974)/float(self.n)))
+
+		# Chunk up image.
+		img_chunks = []
+		for j in range(ncol):
+			for i in range(nrow):
+				x1 = j*self.n
+				y1 = i*self.n
+				x2 = ((j+1)*self.n)
+				y2 = ((i+1)*self.n)
+				img_chunk = img[y1:y2,x1:x2]
+				if not np.any(img_chunk): continue # skip all-black chunks
+				if img_chunk.shape != (self.n,self.n,3): # skip the rare case in which bottom/right-most chunks are nonblack
+					continue
+				img_chunks.append(img_chunk)
+		return img_chunks
+
+	def sample_gen(self,batch_size,X,y_masks,y_filenames):
+		random.seed(1) # For reproducibility
 		chunks = []
 		labels = []
 		filenames = []
 		while True:
-			img_chunks,chunk_labels,filename = self.chunk(n,X,y_masks,y_filenames)
+			# Get random image and its labels
+			index = random.sample(range(len(X)),1)[0]
+			img = X[index]
+			mask = y_masks[index]
+			filename = y_filenames[index].split('/')[-1]
+			img_chunks,chunk_labels,filename = self.chunk(img,mask,filename)
 			chunks.extend(img_chunks)
 			labels.extend(chunk_labels)
 			filenames.extend(filename)
@@ -119,8 +143,8 @@ class ModelContainer:
 				chunks = list(chunks[batch_size:len(chunks)])
 				labels = list(labels[batch_size:len(labels)])
 
-	def isfish_wrapper(self,n,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
-		gen = self.sample_gen(n,batch_size,X,y_masks,y_filenames)
+	def isfish_wrapper(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
+		gen = self.sample_gen(batch_size,X,y_masks,y_filenames)
 		while True:
 			chunks, labels = gen.next()
 			isfish_labels = np.zeros((len(labels),2))
@@ -130,7 +154,7 @@ class ModelContainer:
 
 	''' Trains the model according to the desired 
 		specifications. '''
-	def isfish_train(self, weight_file=None, n=100, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
+	def isfish_train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
 		model_folder = 'data/models/' + self.name + '/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
@@ -139,7 +163,7 @@ class ModelContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
-		train_gen = self.isfish_wrapper(n,batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
+		train_gen = self.isfish_wrapper(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
 		# Convert test labels to isfish format
 		y_test = np.zeros((len(self.y_test),2))
 		y_test[:,0]=self.y_test[:,-1].astype(np.float32)
@@ -155,8 +179,6 @@ class ModelContainer:
 
 		self.model.load_weights('data/models/'+self.name+'/'+weight_file)
 		predictions = self.model.predict(self.test_images, verbose=1)
-		if not os.path.exists('data/models/'+self.name):
-			os.makedirs('data/models/'+self.name)
 
 		with open('data/models/'+self.name+'/'+submission_name+'.csv', 'w+') as csvfile:
 			output = csv.writer(csvfile, delimiter=',')
