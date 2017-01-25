@@ -34,7 +34,7 @@ class ModelContainer:
 	def __init__(self,name,model,n,optimizer=Adam(lr=1e-5)):
 		self.name = name
 
-		model.compile(optimizer=optimizer, loss="mse")
+		model.compile(optimizer=optimizer, loss="categorical_crossentropy")
 		self.model = model
 
 		self.n = n
