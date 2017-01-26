@@ -36,7 +36,7 @@ def construct(n):
 	model.add(Dense(128, activation='relu'))
 	model.add(Dropout(0.5))
 	model.add(Dense(128, activation='relu'))
-	model.add(Dense(2, activation='sigmoid'))
+	model.add(Dense(1, activation='sigmoid'))
 
 	return model
 
