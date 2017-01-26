@@ -72,7 +72,8 @@ class ModelContainer:
 				if img_chunk.shape != (self.n,self.n,3): # skip the rare case in which bottom/right-most chunks are nonblack
 					continue
 				mask_chunk = mask[y1:y2,x1:x2]
-				if not np.any(mask_chunk): # work is done, short-circuit the labeling
+				pct_coverage = float(sum(sum((mask_chunk>0).astype(np.uint8))))/float(self.n*self.n)
+				if pct_coverage < .001: # not enough of fish in chunk, label as no fish
 					img_chunks.append(img_chunk)
 					chunk_labels.append(np.array([0,0,0,0,0]))
 					filenames.append(filename)
@@ -136,7 +137,7 @@ class ModelContainer:
 				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
 				sample_labels = np.array(labels)[shuffle][0:batch_size]
 				sample_filenames = np.array(filenames)[shuffle][0:batch_size]
-				yield (sample_chunks,sample_labels)
+				yield (sample_chunks,sample_labels,sample_filenames)
 				# Keep leftover samples for next epoch
 				chunks = list(chunks[batch_size:len(chunks)])
 				labels = list(labels[batch_size:len(labels)])
@@ -144,11 +145,11 @@ class ModelContainer:
 	def isfish_wrapper(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
 		gen = self.sample_gen(batch_size,X,y_masks,y_filenames)
 		while True:
-			chunks, labels = gen.next()
+			chunks, labels, filenames = gen.next()
 			isfish_labels = np.zeros((len(labels),2))
 			isfish_labels[:,0]=labels[:,-1].astype(np.float32)
 			isfish_labels[:,1]=(~labels[:,-1].astype(bool)).astype(np.float32)
-			yield (chunks,isfish_labels)
+			yield (chunks,isfish_labels,filenames)
 
 	''' Trains the model according to the desired 
 		specifications. '''
