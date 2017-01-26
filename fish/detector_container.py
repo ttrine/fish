@@ -137,7 +137,7 @@ class ModelContainer:
 				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
 				sample_labels = np.array(labels)[shuffle][0:batch_size]
 				sample_filenames = np.array(filenames)[shuffle][0:batch_size]
-				yield (sample_chunks,sample_labels,sample_filenames)
+				yield (sample_chunks,sample_labels)
 				# Keep leftover samples for next epoch
 				chunks = list(chunks[batch_size:len(chunks)])
 				labels = list(labels[batch_size:len(labels)])
@@ -145,11 +145,11 @@ class ModelContainer:
 	def isfish_wrapper(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
 		gen = self.sample_gen(batch_size,X,y_masks,y_filenames)
 		while True:
-			chunks, labels, filenames = gen.next()
+			chunks, labels = gen.next()
 			isfish_labels = np.zeros((len(labels),2))
 			isfish_labels[:,0]=labels[:,-1].astype(np.float32)
 			isfish_labels[:,1]=(~labels[:,-1].astype(bool)).astype(np.float32)
-			yield (chunks,isfish_labels,filenames)
+			yield (chunks,isfish_labels)
 
 	''' Trains the model according to the desired 
 		specifications. '''
