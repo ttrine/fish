@@ -6,11 +6,9 @@ from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
 from keras import backend as K
 
-from preprocess import TEST_DIR
-
 def read_boxes():
 	import csv
-	y_boxes_file = open("data/train/y_boxes.csv",'rb')
+	y_boxes_file = open("data/train/binary/y_boxes.csv",'rb')
 	box_reader = csv.reader(y_boxes_file)
 	box_reader.next() # skip header
 	y_boxes = [{'filename': box[0].split('/')[-1],'x1':int(box[1]),'y1':int(box[2]),'x2':int(box[3]),'y2':int(box[4])} for box in box_reader]
@@ -40,18 +38,18 @@ class ModelContainer:
 		self.n = n
 		
 		# Load raw-ish data, parceled out into splits
-		data = h5py.File('data/train/data.h5','r')
+		data = h5py.File('data/train/binary/data.h5','r')
 		self.X_train = data['X_train']
 		self.y_masks_train = data['y_masks_train']
-		self.y_filenames_train = np.load('data/train/y_filenames_train.npy')
-		self.y_classes_train = np.load('data/train/y_classes_train.npy')
+		self.y_filenames_train = np.load('data/train/binary/y_filenames_train.npy')
+		self.y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_boxes = read_boxes()
-		self.X_test = np.load('data/train/X_test_chunks.npy')
-		self.y_test = np.load('data/train/y_test_chunks.npy')
+		self.X_test = np.load('data/train/binary/X_test_chunks.npy')
+		self.y_test = np.load('data/train/binary/y_test_chunks.npy')
 
-		eval_data = h5py.File("data/test_stg1/eval_data.h5",'r')
+		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
 		self.X_eval = eval_data['X']
-		self.filenames_eval = np.load("data/test_stg1/y_filenames.npy")
+		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
 	def chunk(self,img,mask,filename):
 		# Insert augmentation here
@@ -183,7 +181,7 @@ class ModelContainer:
 		with open('data/models/'+self.name+'/'+submission_name+'.csv', 'w+') as csvfile:
 			output = csv.writer(csvfile, delimiter=',')
 			output.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
-			filenames = [filename for filename in os.listdir(TEST_DIR) if filename.split('.')[1]!='npy']
+			filenames = [filename for filename in os.listdir("data/test_stg1/binary") if filename.split('.')[1]!='npy']
 			filenames.sort()
 			for i,pred in enumerate(predictions):
 				output.writerow([filenames[i]] + [str(col) for col in pred])
