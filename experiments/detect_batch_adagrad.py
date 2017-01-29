@@ -1,6 +1,5 @@
 from keras.models import Sequential
 from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPooling2D, Dense, BatchNormalization
-from keras.optimizers import Adagrad
 from keras import backend as K
 
 from fish.detector_container import ModelContainer
@@ -39,8 +38,6 @@ def construct(n):
 	model.add(Dense(1, activation='sigmoid'))
 
 	return model
-
-adagrad = Adagrad()
 
 if __name__ == '__main__':
 	import sys
