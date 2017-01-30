@@ -40,11 +40,7 @@ def construct(n):
 	return model
 
 if __name__ == '__main__':
-	import sys
+	import sys # very basic CLI arg parsing
 
-	if len(sys.argv) > 1: # very very basic
-		model = ModelContainer('detect_batch_adam',construct(int(sys.argv[1])),int(sys.argv[1]),"adam")
-		model.isfish_train(nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))
-	else:
-		model = ModelContainer('detect_batch_adam',construct(256),256,"adam")
-		model.isfish_train(nb_epoch=100, batch_size=500, samples_per_epoch=1000)
+	model = ModelContainer(sys.argv[1],construct(int(sys.argv[2])),int(sys.argv[2]),"adam")
+	model.isfish_train(nb_epoch=int(sys.argv[3]), batch_size=int(sys.argv[4]), samples_per_epoch=int(sys.argv[5]))
