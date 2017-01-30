@@ -1,4 +1,5 @@
-import os, csv, random, math
+import os, sys
+import csv, random, math
 import numpy as np
 import h5py
 from sklearn.model_selection import train_test_split
@@ -34,8 +35,6 @@ class ModelContainer:
 
 		model.compile(optimizer=optimizer, loss="binary_crossentropy")
 		self.model = model
-
-		self.n = n
 		
 		# Load raw-ish data, parceled out into splits
 		data = h5py.File('data/train/binary/data.h5','r')
@@ -44,9 +43,16 @@ class ModelContainer:
 		self.y_filenames_train = np.load('data/train/binary/y_filenames_train.npy')
 		self.y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_boxes = read_boxes()
-		self.X_test = np.load('data/train/binary/X_test_chunks.npy')
-		self.y_test = np.load('data/train/binary/y_test_chunks.npy')
 
+		try: # Test data must be precomputed
+			self.X_test = np.load('data/train/binary/X_test_chunks_'+str(n)+'.npy')
+			self.y_test = np.load('data/train/binary/y_test_chunks_'+str(n)+'.npy')
+		except:
+			print "Precomputed test data not found for that chunk size."
+			sys.exit()
+
+		self.n = n
+		
 		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
 		self.X_eval = eval_data['X']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
