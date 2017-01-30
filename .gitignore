@@ -1,4 +1,7 @@
 *.pyc
+*.csv
 .DS_Store
 data
+*.jpg
 Todo.txt
+.Rproj.user
