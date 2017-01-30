@@ -158,14 +158,14 @@ class ModelContainer:
 	''' Trains the model according to the desired 
 		specifications. '''
 	def isfish_train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
-		model_folder = 'data/models/' + self.name + '/'
+		model_folder = 'experiments/' + self.name + '/models'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
 
 		if weight_file is not None:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
-		model_checkpoint = ModelCheckpoint(model_folder+self.name+'_{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
+		model_checkpoint = ModelCheckpoint(model_folder+'_{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
 		train_gen = self.isfish_wrapper(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
 		# Convert test labels to isfish format
 		y_test = self.y_test[:,-1].astype(np.float32)

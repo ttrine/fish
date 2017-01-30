@@ -1,5 +1,6 @@
 *.pyc
 *.csv
+*.h5
 .DS_Store
 data
 *.jpg
