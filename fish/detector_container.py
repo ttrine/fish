@@ -158,7 +158,7 @@ class ModelContainer:
 	''' Trains the model according to the desired 
 		specifications. '''
 	def isfish_train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
-		model_folder = 'experiments/' + self.name + '/models'
+		model_folder = 'experiments/' + self.name + '/weights/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
 
