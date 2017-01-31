@@ -165,7 +165,7 @@ class ModelContainer:
 		if weight_file is not None:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
-		model_checkpoint = ModelCheckpoint(model_folder+'_{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
+		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
 		train_gen = self.isfish_wrapper(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
 		# Convert test labels to isfish format
 		y_test = self.y_test[:,-1].astype(np.float32)
