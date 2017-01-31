@@ -101,63 +101,40 @@ class ModelContainer:
 					else: continue
 		return (img_chunks,chunk_labels,filenames)
 
-	def chunk_eval(self,img): # Doesn't require a mask
-		# Insert augmentation here?
+	def sample_gen(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
+		def sample_gen(batch_size,X,y_masks,y_filenames): # Yield full BB label
+			random.seed(1) # For reproducibility
+			chunks = []
+			labels = []
+			filenames = []
+			while True:
+				# Get random image and its labels
+				index = random.sample(range(len(X)),1)[0]
+				img = X[index]
+				mask = y_masks[index]
+				filename = y_filenames[index].split('/')[-1]
+				img_chunks,chunk_labels,filename = self.chunk(img,mask,filename)
+				chunks.extend(img_chunks)
+				labels.extend(chunk_labels)
+				filenames.extend(filename)
+				if len(chunks) >= batch_size:
+					# Randomize, cast, yield
+					shuffle = random.sample(range(len(chunks)),len(chunks))
+					sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
+					sample_labels = np.array(labels)[shuffle][0:batch_size]
+					sample_filenames = np.array(filenames)[shuffle][0:batch_size]
+					yield (sample_chunks,sample_labels)
+					# Keep leftover samples for next epoch
+					chunks = list(chunks[batch_size:len(chunks)])
+					labels = list(labels[batch_size:len(labels)])
 
-		ncol = int(math.ceil(float(1732)/float(self.n)))
-		nrow = int(math.ceil(float(974)/float(self.n)))
-
-		# Chunk up image.
-		img_chunks = []
-		for j in range(ncol):
-			for i in range(nrow):
-				x1 = j*self.n
-				y1 = i*self.n
-				x2 = ((j+1)*self.n)
-				y2 = ((i+1)*self.n)
-				img_chunk = img[y1:y2,x1:x2]
-				if not np.any(img_chunk): continue # skip all-black chunks
-				if img_chunk.shape != (self.n,self.n,3): # skip the rare case in which bottom/right-most chunks are nonblack
-					continue
-				img_chunks.append(img_chunk)
-		return img_chunks
-
-	def sample_gen(self,batch_size,X,y_masks,y_filenames):
-		random.seed(1) # For reproducibility
-		chunks = []
-		labels = []
-		filenames = []
-		while True:
-			# Get random image and its labels
-			index = random.sample(range(len(X)),1)[0]
-			img = X[index]
-			mask = y_masks[index]
-			filename = y_filenames[index].split('/')[-1]
-			img_chunks,chunk_labels,filename = self.chunk(img,mask,filename)
-			chunks.extend(img_chunks)
-			labels.extend(chunk_labels)
-			filenames.extend(filename)
-			if len(chunks) >= batch_size:
-				# Randomize, cast, yield
-				shuffle = random.sample(range(len(chunks)),len(chunks))
-				sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
-				sample_labels = np.array(labels)[shuffle][0:batch_size]
-				sample_filenames = np.array(filenames)[shuffle][0:batch_size]
-				yield (sample_chunks,sample_labels)
-				# Keep leftover samples for next epoch
-				chunks = list(chunks[batch_size:len(chunks)])
-				labels = list(labels[batch_size:len(labels)])
-
-	def isfish_wrapper(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
-		gen = self.sample_gen(batch_size,X,y_masks,y_filenames)
+		gen = sample_gen(batch_size,X,y_masks,y_filenames)
 		while True:
 			chunks, labels = gen.next()
 			isfish_labels = labels[:,-1].astype(np.float32)
 			yield (chunks,isfish_labels)
 
-	''' Trains the model according to the desired 
-		specifications. '''
-	def isfish_train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
+	def train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
@@ -166,15 +143,16 @@ class ModelContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
-		train_gen = self.isfish_wrapper(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
-		# Convert test labels to isfish format
+		train_gen = self.sample_gen(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
+		
+		# Convert test labels to coverage only
 		y_test = self.y_test[:,-1].astype(np.float32)
+
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
 
-	''' Runs the test set through the network and 
-		converts the result to regulation format. '''
-	def evaluate(self,weight_file,submission_name=None):# VAR NAMES HAVE CHANGED
+	''' Not yet functional. '''
+	def evaluate(self,weight_file,submission_name=None):
 		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
 		model_folder = 'data/models/' + self.name + '/'
 
