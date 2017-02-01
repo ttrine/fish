@@ -1,10 +1,13 @@
 library(pROC)
 library(SDMTools)
+library(readr)
+
+test <- read_csv("~/Documents/Projects/fish/analysis/threshold/detect_batch_more_feats.csv", 
+                 col_names = FALSE)response <- as.integer(detect_batch_more_feats$V1)
 
 # ROC Curve
-detect_batch_more_feats <- read.csv("~/Documents/Projects/fish/data/exploratory/detect_batch_more_feats.csv", header=FALSE)
-response <- as.integer(detect_batch_more_feats$V1)
-predictor <- detect_batch_more_feats$V2
+response <- test$X1
+predictor <- test$X2
 roc_curve <- roc(response,predictor)
 plot(roc_curve)
 

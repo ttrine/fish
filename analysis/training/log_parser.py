@@ -1,21 +1,19 @@
-## Rudimentarily parses out validation losses
-## from a log. Assumes that first line of file is Epoch 1.
 import csv
 
-def parse_losses(logpath):
-	log = file(logpath,'r')
+def parse_losses(experiment):
+	path = "experiments/"+experiment+"/log.out"
+	log = file(path,'r')
 	lines = log.readlines()
-	train_lines = [line for ind,line in enumerate(lines) if ind%2==1]
-	val_losses = [float(train_line.split(' ')[-1]) for train_line in train_lines]
-	as_rows = [[val_loss] for val_loss in val_losses]
+	val_losses = [[float(line.split('val_loss: ')[-1].split('\n')[0])] for line in lines if 'val_loss: ' in line]
 
 	# Dump to 1 column "csv"
-	losspath = logpath.split('.')[0]+".csv"
-	lossfile = file(losspath,'wb')
-	losswriter = csv.writer(lossfile)
-	losswriter.writerows(as_rows)
-	lossfile.close()
+	outpath = "analysis/training/"+experiment+".csv"
+	f = file(outpath,'wb')
+	w = csv.writer(f)
+	w.writerows(val_losses)
+	f.close()
 
 if __name__ == '__main__':
-	import sys
-	parse_losses(sys.argv[1]) # Assumes 1st arg is filepath
+	import sys # Pass 1st arg is experiment name
+
+	parse_losses(sys.argv[1])
