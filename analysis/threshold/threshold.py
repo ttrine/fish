@@ -25,4 +25,4 @@ def predict_and_dump(experiment,weights,n,loss=sgd):
 if __name__ == '__main__':
 	import sys # experiment_name, weight_file, n
 
-	predict_and_dump(sys.argv[1],sys.argv[2],sys.argv[3])
+	predict_and_dump(sys.argv[1],sys.argv[2],int(sys.argv[3]))
