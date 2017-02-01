@@ -14,6 +14,6 @@ def parse_losses(experiment):
 	f.close()
 
 if __name__ == '__main__':
-	import sys # Pass 1st arg is experiment name
+	import sys # 1st arg is experiment name
 
 	parse_losses(sys.argv[1])
