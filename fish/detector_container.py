@@ -103,18 +103,14 @@ class ModelContainer:
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
 
-	''' Not yet functional. '''
-	def evaluate(self,weight_file,submission_name=None):
-		if submission_name is None: submission_name = weight_file.split('.hdf5')[0] + '_submission'
-		model_folder = 'data/models/' + self.name + '/'
-
+	''' Score each chunk in each evaluation image, keeping track of location. '''
+	def evaluate(self,weight_file):
 		self.model.load_weights('data/models/'+self.name+'/'+weight_file)
-		predictions = self.model.predict(self.test_images, verbose=1)
 
-		with open('data/models/'+self.name+'/'+submission_name+'.csv', 'w+') as csvfile:
-			output = csv.writer(csvfile, delimiter=',')
-			output.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
-			filenames = [filename for filename in os.listdir("data/test_stg1/binary") if filename.split('.')[1]!='npy']
-			filenames.sort()
-			for i,pred in enumerate(predictions):
-				output.writerow([filenames[i]] + [str(col) for col in pred])
+		eval_samples = [] # List of dictionaries with location tuples as keys, inference outputes as vals
+		for i in range(len(self.X_eval)):
+			chunks, locations = chunk_eval(self.n,self.X_eval[i])
+			predictions = self.model.predict(chunks)
+			eval_samples.append({'predictions': predictions,'locations': locations})
+
+		return eval_samples

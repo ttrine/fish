@@ -51,7 +51,7 @@ def chunk_train(n,y_boxes,img,mask,filename):
 				else: continue
 	return (img_chunks,chunk_labels,filenames)
 
-def chunk_test(n,img):
+def chunk_eval(n,img):
 	# Insert augmentation here
 
 	ncol = int(math.ceil(float(1732)/float(n)))
