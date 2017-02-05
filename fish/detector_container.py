@@ -39,6 +39,7 @@ def chunk(n,y_boxes,img,mask,filename):
 	img_chunks = []
 	chunk_labels = []
 	filenames = [] # For easier debugging
+	locations = [] # For evaluation pipeline
 	for j in range(ncol):
 		for i in range(nrow):
 			x1 = j*n
@@ -70,8 +71,9 @@ def chunk(n,y_boxes,img,mask,filename):
 							img_chunks.append(img_chunk)
 							chunk_labels.append(np.array([x_dist_tr,y_dist_tr,x_dist_br,y_dist_br,1]))
 							filenames.append(filename)
+							locations.append((i,j))
 				else: continue
-	return (img_chunks,chunk_labels,filenames)
+	return (img_chunks,chunk_labels,filenames,locations)
 
 class ModelContainer:
 	def __init__(self,name,model,n,optimizer=Adam(lr=1e-5)):
@@ -113,7 +115,7 @@ class ModelContainer:
 				img = X[index]
 				mask = y_masks[index]
 				filename = y_filenames[index].split('/')[-1]
-				img_chunks,chunk_labels,filename = chunk(self.n,self.y_boxes,img,mask,filename)
+				img_chunks,chunk_labels,filename,_ = chunk(self.n,self.y_boxes,img,mask,filename)
 				chunks.extend(img_chunks)
 				labels.extend(chunk_labels)
 				filenames.extend(filename)
