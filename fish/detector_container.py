@@ -110,7 +110,7 @@ class ModelContainer:
 		eval_samples = [] # List of dictionaries with location tuples as keys, inference outputes as vals
 		for i in range(len(self.X_eval)):
 			chunks, locations = chunk_eval(self.n,self.X_eval[i])
-			predictions = self.model.predict(chunks)
+			predictions = self.model.predict(np.array(chunks).astype(np.float32))
 			eval_samples.append({'predictions': predictions,'locations': locations})
 
 		return eval_samples
