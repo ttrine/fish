@@ -105,7 +105,7 @@ class ModelContainer:
 
 	''' Score each chunk in each evaluation image, keeping track of location. '''
 	def evaluate(self,weight_file):
-		self.model.load_weights('data/models/'+self.name+'/'+weight_file)
+		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
 		eval_samples = [] # List of dictionaries with location tuples as keys, inference outputes as vals
 		for i in range(len(self.X_eval)):
