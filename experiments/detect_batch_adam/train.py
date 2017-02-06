@@ -2,7 +2,7 @@ from keras.models import Sequential
 from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPooling2D, Dense, BatchNormalization
 from keras import backend as K
 
-from fish.detector_container import ModelContainer
+from fish.detector import DetectorContainer
 
 def construct(n):
 	model = Sequential()
@@ -40,7 +40,7 @@ def construct(n):
 	return model
 
 if __name__ == '__main__':
-	import sys # basic arg parsing, infer ModelContainer name
+	import sys # basic arg parsing, infer DetectorContainer name
 	name = sys.argv[0].split('/')[-2]
-	model = ModelContainer(name,construct(int(sys.argv[1])),int(sys.argv[1]),"adam")
-	model.isfish_train(nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))
+	model = DetectorContainer(name,construct(int(sys.argv[1])),int(sys.argv[1]),"adam")
+	model.train(nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))

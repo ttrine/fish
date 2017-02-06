@@ -25,7 +25,7 @@ def read_boxes():
 	y_boxes = d
 	return y_boxes
 
-class ModelContainer:
+class DetectorContainer:
 	def __init__(self,name,model,n,optimizer=Adam(lr=1e-5)):
 		self.name = name
 
@@ -65,7 +65,7 @@ class ModelContainer:
 				img = X[index]
 				mask = y_masks[index]
 				filename = y_filenames[index].split('/')[-1]
-				img_chunks,chunk_labels,filename = chunk_train(self.n,self.y_boxes,img,mask,filename)
+				img_chunks,chunk_labels,filename = detector_train_chunker(self.n,self.y_boxes,img,mask,filename)
 				chunks.extend(img_chunks)
 				labels.extend(chunk_labels)
 				filenames.extend(filename)
@@ -86,7 +86,7 @@ class ModelContainer:
 			isfish_labels = labels[:,-1].astype(np.float32)
 			yield (chunks,isfish_labels)
 
-	def train(self, weight_file=None, nb_epoch=40, batch_size=500,samples_per_epoch=10000):
+	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
 		if not os.path.exists(model_folder):
 			os.makedirs(model_folder)
@@ -103,14 +103,19 @@ class ModelContainer:
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
 
-	''' Score each chunk in each evaluation image, keeping track of location. '''
+	''' Produce matrix of scores for each chunk in each evaluation image. '''
 	def evaluate(self,weight_file):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
-		eval_samples = [] # List of dictionaries with location tuples as keys, inference outputes as vals
+		chunks = []
+		predictions = []
 		for i in range(len(self.X_eval)):
-			chunks, locations = chunk_eval(self.n,self.X_eval[i])
-			predictions = self.model.predict(np.array(chunks).astype(np.float32))
-			eval_samples.append({'predictions': predictions,'locations': locations})
-
-		return eval_samples
+			img_chunks = chunk_image(self.n,self.X_eval[i])
+			img_predictions = np.zeros(chunks.shape,dtype=np.uint8)
+			for i in range(chunks.shape[0]):
+				for j in range(chunks.shape[1]):
+					if chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
+					predictions[i,j] = self.model.predict(chunks[i,j].astype(np.float32))
+			chunks.append(img_chunks)
+			predictions.append(img_predictions)
+		return chunks,predictions

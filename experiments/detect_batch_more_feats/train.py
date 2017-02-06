@@ -3,7 +3,7 @@ from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPool
 from keras.optimizers import SGD
 from keras import backend as K
 
-from fish.detector_container import ModelContainer
+from fish.detector import DetectorContainer
 
 def construct(n):
 	model = Sequential()
@@ -46,8 +46,8 @@ if __name__ == '__main__':
 	import sys
 
 	if len(sys.argv) > 1: # very very basic
-		model = ModelContainer('detect_batch_more_feats',construct(int(sys.argv[1])),int(sys.argv[1]),sgd)
-		model.isfish_train(nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))
+		model = DetectorContainer('detect_batch_more_feats',construct(int(sys.argv[1])),int(sys.argv[1]),sgd)
+		model.train(nb_epoch=int(sys.argv[2]), batch_size=int(sys.argv[3]), samples_per_epoch=int(sys.argv[4]))
 	else:
-		model = ModelContainer('detect_batch_more_feats',construct(256),256,sgd)
-		model.isfish_train(nb_epoch=100, batch_size=500, samples_per_epoch=1000)
+		model = DetectorContainer('detect_batch_more_feats',construct(256),256,sgd)
+		model.train(nb_epoch=100, batch_size=500, samples_per_epoch=1000)

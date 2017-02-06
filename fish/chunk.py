@@ -7,7 +7,8 @@ def overlap(c_x1,c_x2,c_y1,c_y2,a_x1,a_x2,a_y1,a_y2):
 	y_overlap = len(set(range(c_y1,c_y2)).intersection(set(range(a_y1,a_y2))))>0
 	return x_overlap and y_overlap
 
-def chunk_train(n,y_boxes,img,mask,filename):
+''' Returns chunks and a coverage indicator. '''
+def detector_train_chunker(n,y_boxes,img,mask,filename):
 	# Insert augmentation here
 
 	ncol = int(math.ceil(float(1732)/float(n)))
@@ -51,26 +52,41 @@ def chunk_train(n,y_boxes,img,mask,filename):
 				else: continue
 	return (img_chunks,chunk_labels,filenames)
 
-def chunk_eval(n,img):
-	# Insert augmentation here
-
+''' TODO: Returns coverage matrix. '''
+def chunk_labels(n,mask):
 	ncol = int(math.ceil(float(1732)/float(n)))
 	nrow = int(math.ceil(float(974)/float(n)))
 
-	# Chunk up image. If chunk has coverage, it will be present once for each box it covers.
-	img_chunks = []
-	locations = [] # For evaluation pipeline
+	coverage_matrix = np.zeros((nrow,ncol), dtype=np.uint8)
+
 	for j in range(ncol):
 		for i in range(nrow):
 			x1 = j*n
 			y1 = i*n
 			x2 = ((j+1)*n)
 			y2 = ((i+1)*n)
+			mask_chunk = mask[y1:y2,x1:x2]
+			pct_coverage = float(sum(sum((mask_chunk>0).astype(np.uint8))))/float(n*n)
+			if pct_coverage < .001: # not enough of fish in chunk, label as no fish
+				coverage_matrix[i,j] = 0
+			else:
+				coverage_matrix[i,j] = 1
+	return coverage_matrix
+
+''' Returns chunk matrix. '''
+def chunk_image(n,img):
+	ncol = int(math.ceil(float(1732)/float(n)))
+	nrow = int(math.ceil(float(974)/float(n)))
+
+	img_chunks = np.ndarray((nrow,ncol), dtype=object)
+
+	for i in range(nrow):
+		for j in range(ncol):
+			x1 = j*n
+			y1 = i*n
+			x2 = ((j+1)*n)
+			y2 = ((i+1)*n)
 			img_chunk = img[y1:y2,x1:x2]
-			if not np.any(img_chunk): 
-				continue # skip all-black chunks
-			if img_chunk.shape != (n,n,3): # skip the rare case in which bottom/right-most chunks are nonblack
-				continue
-			img_chunks.append(img_chunk)
-			locations.append((i,j))
-	return (img_chunks,locations)
+			if not np.any(img_chunk): continue # For memory efficiency
+			img_chunks[i,j] = img_chunk
+	return img_chunks
