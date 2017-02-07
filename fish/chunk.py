@@ -8,7 +8,7 @@ def overlap(c_x1,c_x2,c_y1,c_y2,a_x1,a_x2,a_y1,a_y2):
 	return x_overlap and y_overlap
 
 ''' Returns chunks and a coverage indicator. '''
-def detector_train_chunker(n,y_boxes,img,mask,filename):
+def chunk_detector(n,y_boxes,img,mask,filename):
 	# Insert augmentation here
 
 	ncol = int(math.ceil(float(1732)/float(n)))
@@ -26,8 +26,10 @@ def detector_train_chunker(n,y_boxes,img,mask,filename):
 			y2 = ((i+1)*n)
 			img_chunk = img[y1:y2,x1:x2]
 			if not np.any(img_chunk): continue # skip all-black chunks
-			if img_chunk.shape != (n,n,3): # skip the rare case in which bottom/right-most chunks are nonblack
-				continue
+			if img_chunk.shape != (n,n,3): # Embed in correctly sized array
+				embed = np.zeros((n,n,3),dtype=np.uint8)
+				embed[0:img_chunk.shape[0],0:img_chunk.shape[1]] = img_chunk
+				img_chunk = embed
 			mask_chunk = mask[y1:y2,x1:x2]
 			pct_coverage = float(sum(sum((mask_chunk>0).astype(np.uint8))))/float(n*n)
 			if pct_coverage < .001: # not enough of fish in chunk, label as no fish
@@ -53,7 +55,7 @@ def detector_train_chunker(n,y_boxes,img,mask,filename):
 	return (img_chunks,chunk_labels,filenames)
 
 ''' TODO: Returns coverage matrix. '''
-def chunk_labels(n,mask):
+def chunk_mask(n,mask):
 	ncol = int(math.ceil(float(1732)/float(n)))
 	nrow = int(math.ceil(float(974)/float(n)))
 
@@ -88,5 +90,9 @@ def chunk_image(n,img):
 			y2 = ((i+1)*n)
 			img_chunk = img[y1:y2,x1:x2]
 			if not np.any(img_chunk): continue # For memory efficiency
+			if img_chunk.shape != (n,n,3): # Embed in correctly sized array
+				embed = np.zeros((n,n,3),dtype=np.uint8)
+				embed[0:img_chunk.shape[0],0:img_chunk.shape[1]] = img_chunk
+				img_chunk = embed
 			img_chunks[i,j] = img_chunk
 	return img_chunks

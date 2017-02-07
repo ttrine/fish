@@ -10,7 +10,6 @@ from keras import backend as K
 from fish.chunk import *
 
 def read_boxes():
-	import csv
 	y_boxes_file = open("data/train/binary/y_boxes.csv",'rb')
 	box_reader = csv.reader(y_boxes_file)
 	box_reader.next() # skip header
@@ -36,8 +35,6 @@ class DetectorContainer:
 		data = h5py.File('data/train/binary/data.h5','r')
 		self.X_train = data['X_train']
 		self.y_masks_train = data['y_masks_train']
-		self.y_filenames_train = np.load('data/train/binary/y_filenames_train.npy')
-		self.y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_boxes = read_boxes()
 
 		try: # Test data must be precomputed
@@ -53,19 +50,19 @@ class DetectorContainer:
 		self.X_eval = eval_data['X']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
-	def sample_gen(self,batch_size,X,y_masks,y_filenames): # Yield only coverage indicator
-		def sample_gen(batch_size,X,y_masks,y_filenames): # Yield full BB label
+	def sample_gen(self,batch_size): # Yield only coverage indicator
+		def sample_gen(batch_size): # Yield full BB label
 			random.seed(1) # For reproducibility
 			chunks = []
 			labels = []
 			filenames = []
 			while True:
 				# Get random image and its labels
-				index = random.sample(range(len(X)),1)[0]
-				img = X[index]
-				mask = y_masks[index]
-				filename = y_filenames[index].split('/')[-1]
-				img_chunks,chunk_labels,filename = detector_train_chunker(self.n,self.y_boxes,img,mask,filename)
+				index = random.sample(range(len(self.X_train)),1)[0]
+				img = self.X_train[index]
+				mask = self.y_masks_train[index]
+				filename = self.y_filenames_train[index].split('/')[-1]
+				img_chunks,chunk_labels,filename = chunk_detector(self.n,self.y_boxes,img,mask,filename)
 				chunks.extend(img_chunks)
 				labels.extend(chunk_labels)
 				filenames.extend(filename)
@@ -80,7 +77,7 @@ class DetectorContainer:
 					chunks = list(chunks[batch_size:len(chunks)])
 					labels = list(labels[batch_size:len(labels)])
 
-		gen = sample_gen(batch_size,X,y_masks,y_filenames)
+		gen = sample_gen(batch_size)
 		while True:
 			chunks, labels = gen.next()
 			isfish_labels = labels[:,-1].astype(np.float32)
@@ -95,7 +92,7 @@ class DetectorContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
-		train_gen = self.sample_gen(batch_size,self.X_train,self.y_masks_train,self.y_filenames_train)
+		train_gen = self.sample_gen(batch_size)
 		
 		# Convert test labels to coverage only
 		y_test = self.y_test[:,-1].astype(np.float32)
