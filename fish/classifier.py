@@ -4,6 +4,7 @@ import numpy as np
 import pandas
 import h5py
 
+from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
@@ -51,17 +52,17 @@ class ClassifierContainer:
 			index = random.sample(range(len(self.X_train)),1)[0]
 
 			class_label = self.y_classes_train[index]
-			class_labels.append(class_label)
-
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
 			coverage_matrix = chunk_mask(self.n,self.y_masks_train[index])
 			if not np.any(coverage_matrix): continue # No images without fish please
 			chunk_sequence, location_sequence = sequence(chunk_matrix, coverage_matrix)
+			class_labels.append(class_label)
 			chunk_sequences.append(chunk_sequence)
 			location_sequences.append(location_sequence)
 			if len(chunk_sequences) == batch_size:
 				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
 				location_sequences = pad_sequences(location_sequences).astype(np.float32)
+				class_labels = np.array(class_labels)
 				yield [chunk_sequences, location_sequences], class_labels
 				chunk_sequences = []
 				location_sequences = []
@@ -79,4 +80,4 @@ class ClassifierContainer:
 		train_gen = self.sample_gen(batch_size)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=([self.X_test_chunk_seqs,self.X_test_loc_seqs],y_classes_test), verbose=1, callbacks=[model_checkpoint])
+			validation_data=([self.X_test_chunk_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
