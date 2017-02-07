@@ -44,7 +44,7 @@ def compute_and_write(n):
 	print class_labels.shape
 	np.save("data/train/binary/X_test_chunk_seqs_"+str(n),chunk_sequences)
 	np.save("data/train/binary/X_test_loc_seqs_"+str(n),location_sequences)
-	np.save("data/train/binary/y_test_classes_onehot_fish",class_labels)
+	np.save("data/train/binary/y_test_classes_onehot_fish_"+str(n),class_labels)
 
 if __name__ == '__main__':
 	import sys

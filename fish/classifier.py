@@ -30,7 +30,7 @@ class ClassifierContainer:
 		try: # Test data must be precomputed
 			self.X_test_chunk_seqs = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
 			self.X_test_loc_seqs = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
-			self.y_classes_test = np.load('data/train/binary/y_test_classes_onehot_fish.npy')
+			self.y_classes_test = np.load('data/train/binary/y_test_classes_onehot_fish_'+str(n)+'.npy')
 		except:
 			print "Precomputed test data not found for that chunk size."
 			sys.exit()
