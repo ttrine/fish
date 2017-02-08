@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --partition=gpu --gres=gpu:1 --mem=32GB --time=01:00:00:00 -o /scratch/ttrine/fish/experiments/classify_basic/log.out
+#SBATCH --partition=gpu --gres=gpu:1 --mem=32GB --time=1-00:00:00 -o /scratch/ttrine/fish/experiments/classify_basic/log.out
 cd /scratch/ttrine/fish/
 module load python/2.7.12/b2 blas hdf5/1.8.14 cuda cudnn/7.5 git opencv
 module unload python/2.7.10
