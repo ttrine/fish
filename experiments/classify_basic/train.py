@@ -14,9 +14,8 @@ def construct(n):
 	input_locations = Input(shape=(None,2))
 	locations = BatchNormalization()(input_locations)
 
-	# Glimpse net. Same architecture as DRAM paper.
-	chunks = TimeDistributed(Convolution2D(16, 5, 5, activation='relu'))(chunks)
-	chunks = TimeDistributed(Convolution2D(64, 3, 3, activation='relu'))(chunks)
+	# Glimpse net. Inspired by DRAM paper.
+	chunks = TimeDistributed(Convolution2D(32, 5, 5, activation='relu'))(chunks)
 
 	flattened_chunks = TimeDistributed(Flatten())(chunks)
 	flattened_chunks = Masking()(flattened_chunks)
@@ -30,7 +29,7 @@ def construct(n):
 	hadamard = merge([location_vectors, feature_vectors], mode='mul')
 
 	# Combine the feature-location sequences
-	rnn = LSTM(64)(hadamard)
+	rnn = LSTM(32)(hadamard)
 
 	# Predict class
 	fcn = Dense(8,activation='softmax')(rnn)
