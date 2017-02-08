@@ -60,11 +60,10 @@ class ClassifierContainer:
 			chunk_sequences.append(chunk_sequence)
 			location_sequences.append(location_sequence)
 			if len(chunk_sequences) == batch_size:
-				yield [chunk_sequences, location_sequences], class_labels
 				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
 				location_sequences = pad_sequences(location_sequences).astype(np.float32)
 				class_labels = np.array(class_labels)
-				
+				yield [chunk_sequences, location_sequences], class_labels
 				chunk_sequences = []
 				location_sequences = []
 				class_labels = []
