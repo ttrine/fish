@@ -1,6 +1,6 @@
 from keras.models import Model
 
-from keras.layers import Input, Dense, Flatten, merge, BatchNormalization, ZeroPadding2D, Convolution2D
+from keras.layers import Input, Dense, Flatten, merge, BatchNormalization, ZeroPadding2D, Convolution2D, MaxPooling2D
 from keras.layers.core import Masking
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
@@ -14,22 +14,32 @@ def construct(n):
 	input_locations = Input(shape=(None,2))
 	locations = BatchNormalization()(input_locations)
 
-	# Glimpse net. Inspired by DRAM paper.
+	# Glimpse net. Architecture inspired by DRAM paper.
+	chunks = TimeDistributed(ZeroPadding2D((3, 3)))(chunks)
+	chunks = TimeDistributed(Convolution2D(16, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
+
+	chunks = TimeDistributed(ZeroPadding2D((3, 3)))(chunks)
 	chunks = TimeDistributed(Convolution2D(32, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
+
+	chunks = TimeDistributed(ZeroPadding2D((1, 1)))(chunks)
+	chunks = TimeDistributed(Convolution2D(64, 3, 3, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
 
 	flattened_chunks = TimeDistributed(Flatten())(chunks)
 	flattened_chunks = Masking()(flattened_chunks)
-	feature_vectors = TimeDistributed(Dense(32,activation='relu'))(flattened_chunks)
+	feature_vectors = TimeDistributed(Dense(128,activation='relu'))(flattened_chunks)
 
 	# Location encoder
-	location_vectors = TimeDistributed(Dense(32,activation='relu'))(locations)
+	location_vectors = TimeDistributed(Dense(128,activation='relu'))(locations)
 	location_vectors = Masking()(location_vectors)
 	
 	# Multiplicative where-what interaction
 	hadamard = merge([location_vectors, feature_vectors], mode='mul')
 
 	# Combine the feature-location sequences
-	rnn = LSTM(32)(hadamard)
+	rnn = LSTM(128)(hadamard)
 
 	# Predict class
 	fcn = Dense(8,activation='softmax')(rnn)
