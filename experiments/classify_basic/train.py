@@ -30,7 +30,7 @@ def construct(n):
 	hadamard = merge([location_vectors, feature_vectors], mode='mul')
 
 	# Combine the feature-location sequences
-	rnn = LSTM(128)(hadamard)
+	rnn = LSTM(64)(hadamard)
 
 	# Predict class
 	fcn = Dense(8,activation='softmax')(rnn)
