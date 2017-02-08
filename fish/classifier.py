@@ -53,17 +53,18 @@ class ClassifierContainer:
 
 			class_label = self.y_classes_train[index]
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
-			coverage_matrix = chunk_mask(self.n,self.y_masks_train[index])
+			coverage_matrix = chunk_mask(self.n,chunk_matrix,self.y_masks_train[index])
 			if not np.any(coverage_matrix): continue # No images without fish please
 			chunk_sequence, location_sequence = sequence(chunk_matrix, coverage_matrix)
 			class_labels.append(class_label)
 			chunk_sequences.append(chunk_sequence)
 			location_sequences.append(location_sequence)
 			if len(chunk_sequences) == batch_size:
+				yield [chunk_sequences, location_sequences], class_labels
 				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
 				location_sequences = pad_sequences(location_sequences).astype(np.float32)
 				class_labels = np.array(class_labels)
-				yield [chunk_sequences, location_sequences], class_labels
+				
 				chunk_sequences = []
 				location_sequences = []
 				class_labels = []

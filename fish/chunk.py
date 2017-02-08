@@ -55,7 +55,7 @@ def chunk_detector(n,y_boxes,img,mask,filename):
 	return (img_chunks,chunk_labels,filenames)
 
 ''' TODO: Returns coverage matrix. '''
-def chunk_mask(n,mask):
+def chunk_mask(n,chunk_matrix,mask):
 	ncol = int(math.ceil(float(1732)/float(n)))
 	nrow = int(math.ceil(float(974)/float(n)))
 
@@ -63,6 +63,7 @@ def chunk_mask(n,mask):
 
 	for j in range(ncol):
 		for i in range(nrow):
+			if chunk_matrix[i,j] is None: continue # Exclude coverage over all-black chunks
 			x1 = j*n
 			y1 = i*n
 			x2 = ((j+1)*n)
