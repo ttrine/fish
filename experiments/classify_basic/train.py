@@ -15,8 +15,8 @@ def construct(n):
 	locations = BatchNormalization()(input_locations)
 
 	# Glimpse net. Same architecture as DRAM paper.
-	chunks = TimeDistributed(Convolution2D(64, 5, 5, activation='relu'))(chunks)
-	chunks = TimeDistributed(Convolution2D(64, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(Convolution2D(16, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(Convolution2D(16, 5, 5, activation='relu'))(chunks)
 	chunks = TimeDistributed(Convolution2D(64, 3, 3, activation='relu'))(chunks)
 
 	flattened_chunks = TimeDistributed(Flatten())(chunks)
