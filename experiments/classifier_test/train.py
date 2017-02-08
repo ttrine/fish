@@ -1,24 +1,29 @@
 from keras.models import Model
+
 from keras.layers import Input, Dense, Flatten, merge
+from keras.layers.core import Masking
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
 
 from fish.classifier import ClassifierContainer
 
 def construct(n):
-	chunk_input = Input(shape=(None,n,n,3))
-	location_input = Input(shape=(None,2))
+	input_chunks = Input(shape=(None,n,n,3))
+	input_locations = Input(shape=(None,2))
 
-	chunk_flat = TimeDistributed(Flatten())(chunk_input)
-	feature_vector = TimeDistributed(Dense(10,activation='softmax'))(chunk_flat)
+	flattened_chunks = TimeDistributed(Flatten())(input_chunks)
+	flattened_chunks = Masking()(flattened_chunks)
 
-	location_vector = TimeDistributed(Dense(10,activation='softmax'))(location_input)
+	location_vectors = TimeDistributed(Dense(10,activation='softmax'))(input_locations)
+	location_vectors = Masking()(location_vectors)
+	
+	feature_vectors = TimeDistributed(Dense(10,activation='softmax'))(flattened_chunks)
 
-	model = merge([location_vector, feature_vector], mode='mul')
-	model = LSTM(10)(model)
-	model = Dense(8,activation='softmax')(model)
+	hadamard = merge([location_vectors, feature_vectors], mode='mul')
+	rnn = LSTM(10)(hadamard)
+	fcn = Dense(8,activation='softmax')(rnn)
 
-	return Model(input=[chunk_input,location_input],output=model)
+	return Model(input=[input_chunks,input_locations],output=fcn)
 
 if __name__ == '__main__':
 	import sys # basic arg parsing, infer name
