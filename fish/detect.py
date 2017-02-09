@@ -108,11 +108,11 @@ class DetectorContainer:
 		predictions = []
 		for i in range(len(self.X_eval)):
 			img_chunks = chunk_image(self.n,self.X_eval[i])
-			img_predictions = np.zeros(chunks.shape,dtype=np.uint8)
-			for i in range(chunks.shape[0]):
-				for j in range(chunks.shape[1]):
-					if chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
-					predictions[i,j] = self.model.predict(chunks[i,j].astype(np.float32))
+			img_predictions = np.zeros(img_chunks.shape,dtype=np.uint8)
+			for i in range(img_chunks.shape[0]):
+				for j in range(img_chunks.shape[1]):
+					if img_chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
+					img_predictions[i,j] = self.model.predict(img_chunks[i,j].astype(np.float32))
 			chunks.append(img_chunks)
 			predictions.append(img_predictions)
 		return chunks,predictions
