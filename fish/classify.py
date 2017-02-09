@@ -98,7 +98,7 @@ class ClassifierContainer:
 				chunk_seq = chunk_seq.reshape((1,chunk_seq.shape[0],self.n,self.n,3)).astype(np.float32)
 				location_seq = location_seq.reshape((1,location_seq.shape[0],2))
 				if i % 50 == 0: print "Doing inference on image " + str(i)
-				class_prediction = classifier.model.predict([chunk_seq,location_seq])[0]
+				class_prediction = self.model.predict([chunk_seq,location_seq])[0]
 				results.append(class_prediction)
 
 		return results
