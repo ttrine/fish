@@ -113,9 +113,7 @@ class DetectorContainer:
 			for i in range(img_chunks.shape[0]):
 				for j in range(img_chunks.shape[1]):
 					if img_chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
-					print (i,j)
 					img_predictions[i,j] = self.model.predict(img_chunks[i,j].reshape(1,self.n,self.n,3).astype(np.float32))
-					print img_predictions[i,j]
 			chunks.append(img_chunks)
 			predictions.append(img_predictions)
 		return chunks,predictions
