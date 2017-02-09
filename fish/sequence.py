@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from scipy.ndimage.measurements import label
 
 def sequencer(chunks,coverage):
@@ -11,3 +12,10 @@ def sequencer(chunks,coverage):
 
 	return np.array(chunk_seq), np.array(location_seq)
 
+def random_sequencer(chunks,coverage):
+	chunk_seq, location_seq = sequencer(chunks, coverage)
+	shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
+	chunk_seq = chunk_seq[shuffle]
+	location_seq = location_seq[shuffle]
+
+	return chunk_seq, location_seq
