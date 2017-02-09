@@ -81,3 +81,24 @@ class ClassifierContainer:
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=([self.X_test_chunk_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
+
+	''' Predict class for each chunked image in chunk_matrices 
+		given each prediction matrix and a threshold k. '''
+	def evaluate(self,weight_file, chunk_matrices, prediction_matrices, k):
+		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
+
+		results = []
+		for i in range(len(chunk_matrices)):
+			chunk_matrix = chunk_matrices[i]
+			coverage_matrix = (prediction_matrices[i] > k).astype(np.float32)
+			if not np.any(coverage_matrix): # Set pr of class nofish to 1
+				results.append(np.array([0., 0., 0., 0., 1., 0., 0., 0.]))
+			else: # Form a 1-sequence batch and classify it
+				chunk_seq, location_seq = sequencer(chunk_matrix,coverage_matrix)
+				chunk_seq = chunk_seq.reshape((1,chunk_seq.shape[0],self.n,self.n,3)).astype(np.float32)
+				location_seq = location_seq.reshape((1,location_seq.shape[0],2))
+				if i % 50 == 0: print "Doing inference on image " + str(i)
+				class_prediction = classifier.model.predict([chunk_seq,location_seq])[0]
+				results.append(class_prediction)
+
+		return results

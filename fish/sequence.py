@@ -10,3 +10,4 @@ def sequencer(chunks,coverage):
 	chunk_seq = [chunks[l] for l in location_seq]
 
 	return np.array(chunk_seq), np.array(location_seq)
+
