@@ -106,9 +106,10 @@ class DetectorContainer:
 
 		chunks = []
 		predictions = []
-		for i in range(len(self.X_eval)):
-			img_chunks = chunk_image(self.n,self.X_eval[i])
+		for ind in range(len(self.X_eval)):
+			img_chunks = chunk_image(self.n,self.X_eval[ind])
 			img_predictions = np.zeros(img_chunks.shape,dtype=np.uint8)
+			print "Evaluating image " + str(ind)
 			for i in range(img_chunks.shape[0]):
 				for j in range(img_chunks.shape[1]):
 					if img_chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
