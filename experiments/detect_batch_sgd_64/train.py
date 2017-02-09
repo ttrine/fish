@@ -1,4 +1,4 @@
-from fish.detector import DetectorContainer
+from fish.detect import DetectorContainer
 
 from experiments.detect_batch_adam_64.train import construct
 

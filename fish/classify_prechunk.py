@@ -5,7 +5,7 @@ from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequencer import sequence
+from fish.sequence import sequencer
 
 data = h5py.File('data/train/binary/data.h5','r')
 

@@ -1,7 +1,7 @@
 import math, h5py
 import numpy as np
 
-from fish.detector_container import read_boxes, overlap
+from fish.detect import read_boxes, overlap
 
 data = h5py.File('data/train/binary/data.h5','r')
 

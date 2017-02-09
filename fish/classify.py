@@ -9,7 +9,7 @@ from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequencer import sequence
+from fish.sequence import sequencer
 
 class ClassifierContainer:
 	def __init__(self,name,model,n,optimizer):
@@ -55,7 +55,7 @@ class ClassifierContainer:
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
 			coverage_matrix = chunk_mask(self.n,chunk_matrix,self.y_masks_train[index])
 			if not np.any(coverage_matrix): continue # No images without fish please
-			chunk_sequence, location_sequence = sequence(chunk_matrix, coverage_matrix)
+			chunk_sequence, location_sequence = sequencer(chunk_matrix, coverage_matrix)
 			class_labels.append(class_label)
 			chunk_sequences.append(chunk_sequence)
 			location_sequences.append(location_sequence)

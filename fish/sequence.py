@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage.measurements import label
 
-def sequence(chunks,coverage):
+def sequencer(chunks,coverage):
 	# Identify contiguous regions of coverage map
 	labels, numL = label(coverage)
 	# Traverse each region, adding each chunk to a list

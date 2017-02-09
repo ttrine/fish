@@ -5,7 +5,7 @@ from keras.layers.core import Masking
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
 
-from fish.classifier import ClassifierContainer
+from fish.classify import ClassifierContainer
 
 def construct(n):
 	input_chunks = Input(shape=(None,n,n,3))

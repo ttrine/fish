@@ -3,7 +3,7 @@ from keras.layers import Dropout, Flatten, ZeroPadding2D, Convolution2D, MaxPool
 from keras.optimizers import SGD
 from keras import backend as K
 
-from fish.detector import DetectorContainer
+from fish.detect import DetectorContainer
 
 def construct(n):
 	model = Sequential()
