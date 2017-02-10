@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import random
 from scipy.ndimage.measurements import label
+
+from keras.callbacks import ModelCheckpoint
 
 def sequencer(chunks,coverage):
 	# Identify contiguous regions of coverage map

@@ -24,14 +24,18 @@ class ClassifierContainer:
 		self.y_masks_train = data['y_masks_train']
 		self.y_filenames_train = np.load('data/train/binary/y_filenames_train.npy')
 
+		# TODO: More principled way to manage loading detector outputs.
+		pred_matrices_train = np.load('data/train/binary/X_train_pred_mats_adam_256.npy')
+		self.coverage_matrices_train = (pred_matrices_train > .25).astype(np.uint8)
+
 		# Convert class labels to 1-hot schema
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
 		try: # Test data must be precomputed
-			self.X_test_chunk_seqs = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
-			self.X_test_loc_seqs = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
-			self.y_classes_test = np.load('data/train/binary/y_test_classes_onehot_fish_'+str(n)+'.npy')
+			self.X_test_chunk_seqs = np.load('data/train/binary/X_test_inf_chunk_seqs_'+str(n)+'.npy')
+			self.X_test_loc_seqs = np.load('data/train/binary/X_test_inf_loc_seqs_'+str(n)+'.npy')
+			self.y_classes_test = np.load('data/train/binary/y_test_inf_classes_onehot_fish_'+str(n)+'.npy')
 		except:
 			print "Precomputed test data not found for that chunk size."
 			sys.exit()
@@ -53,8 +57,9 @@ class ClassifierContainer:
 
 			class_label = self.y_classes_train[index]
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
-			coverage_matrix = chunk_mask(self.n,chunk_matrix,self.y_masks_train[index])
-			if not np.any(coverage_matrix): continue # No images without fish please
+			coverage_matrix = self.coverage_matrices_train[index]
+			# coverage_matrix = chunk_mask(self.n,chunk_matrix,self.y_masks_train[index])
+			if not np.any(coverage_matrix): continue # No 0-length sequences please
 			chunk_sequence, location_sequence = random_sequencer(chunk_matrix, coverage_matrix)
 			class_labels.append(class_label)
 			chunk_sequences.append(chunk_sequence)
