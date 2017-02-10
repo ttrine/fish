@@ -39,7 +39,7 @@ def construct(n):
 	hadamard = merge([location_vectors, feature_vectors], mode='mul')
 
 	# Combine the feature-location sequences
-	rnn = LSTM(128, dropout_W=.5, dropout_U=.5)(hadamard)
+	rnn = LSTM(128, dropout_W=.5)(hadamard)
 
 	# Predict class
 	fcn = Dropout(.5)(rnn)
