@@ -25,6 +25,7 @@ def construct(n):
 
 	chunks = TimeDistributed(ZeroPadding2D((1, 1)))(chunks)
 	chunks = TimeDistributed(Convolution2D(128, 3, 3, activation='relu'))(chunks)
+	chunks = TimeDistributed(Convolution2D(64, 1, 1, activation='relu'))(chunks)
 	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
 
 	flattened_chunks = TimeDistributed(Flatten())(chunks)
