@@ -97,7 +97,7 @@ class ClassifierContainer:
 				chunk_seq, location_seq = sequencer(chunk_matrix,coverage_matrix)
 				chunk_seq = chunk_seq.reshape((1,chunk_seq.shape[0],self.n,self.n,3)).astype(np.float32)
 				location_seq = location_seq.reshape((1,location_seq.shape[0],2))
-				if ind % 50 == 0: print str(ind) + " images processed by classifier."
+				if i % 50 == 0: print str(i) + " images processed by classifier."
 				class_prediction = self.model.predict([chunk_seq,location_seq])[0]
 				results.append(class_prediction)
 
