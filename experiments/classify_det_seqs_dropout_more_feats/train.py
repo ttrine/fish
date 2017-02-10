@@ -30,10 +30,10 @@ def construct(n):
 
 	flattened_chunks = TimeDistributed(Flatten())(chunks)
 	flattened_chunks = Masking()(flattened_chunks)
-	feature_vectors = TimeDistributed(Dense(256,activation='relu'))(flattened_chunks)
+	feature_vectors = TimeDistributed(Dense(128,activation='relu'))(flattened_chunks)
 
 	# Location encoder
-	location_vectors = TimeDistributed(Dense(256,activation='relu'))(locations)
+	location_vectors = TimeDistributed(Dense(128,activation='relu'))(locations)
 	location_vectors = Masking()(location_vectors)
 	
 	# Multiplicative where-what interaction
