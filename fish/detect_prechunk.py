@@ -45,7 +45,7 @@ def compute_and_write(n):
 	print location_sequences.shape
 	print class_labels.shape
 	np.save("data/train/binary/X_test_det_chunk_seqs_"+str(n),chunk_sequences)
-	np.save("data/train/binary/X_test_det_coverage_seqs_"+str(n),coverage_seqs)
+	np.save("data/train/binary/X_test_det_coverage_seqs_"+str(n),coverage_sequences)
 	np.save("data/train/binary/X_test_det_loc_seqs_"+str(n),location_sequences)
 	np.save("data/train/binary/y_test_det_classes_onehot_fish_"+str(n),class_labels)
 
