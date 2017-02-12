@@ -24,7 +24,7 @@ def random_sequencer(chunks,coverage):
 	return chunk_seq, location_seq
 
 # Put all nonblack image chunks into a random sequence
-def detector_sequencer(chunks, coverage):
+def detector_sequencer(chunks):
 	location_seq = []
 	for i in range(len(chunks)):
 		for j in range(len(chunks[i])):
@@ -32,15 +32,12 @@ def detector_sequencer(chunks, coverage):
 				location_seq.append((i, j))
 
 	chunk_seq = [chunks[l] for l in location_seq]
-	coverage_seq = [coverage[l] for l in location_seq]
 	
 	chunk_seq = np.array(chunk_seq)
-	coverage_seq = np.array(coverage_seq)
 	location_seq = np.array(location_seq)
 
 	shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
 	chunk_seq = chunk_seq[shuffle]
-	coverage_seq = coverage_seq[shuffle]
 	location_seq = location_seq[shuffle]
 	
-	return np.array(chunk_seq), np.array(coverage_seq), np.array(location_seq)
+	return np.array(chunk_seq), np.array(location_seq)

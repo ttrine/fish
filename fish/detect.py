@@ -4,10 +4,12 @@ import numpy as np
 import h5py
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ModelCheckpoint
+from keras.preprocessing.sequence import pad_sequences
 from keras.optimizers import Adam
 from keras import backend as K
 
 from fish.chunk import *
+from fish.sequence import detector_sequencer
 
 def read_boxes():
 	y_boxes_file = open("data/train/binary/y_boxes.csv",'rb')
@@ -37,12 +39,9 @@ class DetectorContainer:
 		self.y_masks_train = data['y_masks_train']
 		self.y_boxes = read_boxes()
 
-		try: # Test data must be precomputed
-			self.X_test = np.load('data/train/binary/X_test_chunks_'+str(n)+'.npy')
-			self.y_test = np.load('data/train/binary/y_test_chunks_'+str(n)+'.npy')
-		except:
-			print "Precomputed test data not found for that chunk size."
-			sys.exit()
+		self.X_test_chunks = np.load('data/train/binary/X_test_det_chunk_seqs_256.npy')
+		self.X_test_locations = np.load('data/train/binary/X_test_det_loc_seqs_256.npy')
+		self.y_test_coverage = np.load('data/train/binary/y_test_det_coverage_mats_256.npy')
 
 		self.n = n
 		
@@ -50,38 +49,27 @@ class DetectorContainer:
 		self.X_eval = eval_data['X']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
-	def sample_gen(self,batch_size): # Yield only coverage indicator
-		def sample_gen(batch_size): # Yield full BB label
-			random.seed(1) # For reproducibility
-			chunks = []
-			labels = []
-			filenames = []
-			while True:
-				# Get random image and its labels
-				index = random.sample(range(len(self.X_train)),1)[0]
-				img = self.X_train[index]
-				mask = self.y_masks_train[index]
-				filename = self.y_filenames_train[index].split('/')[-1]
-				img_chunks,chunk_labels,filename = chunk_detector(self.n,self.y_boxes,img,mask,filename)
-				chunks.extend(img_chunks)
-				labels.extend(chunk_labels)
-				filenames.extend(filename)
-				if len(chunks) >= batch_size:
-					# Randomize, cast, yield
-					shuffle = random.sample(range(len(chunks)),len(chunks))
-					sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
-					sample_labels = np.array(labels)[shuffle][0:batch_size]
-					sample_filenames = np.array(filenames)[shuffle][0:batch_size]
-					yield (sample_chunks,sample_labels)
-					# Keep leftover samples for next epoch
-					chunks = list(chunks[batch_size:len(chunks)])
-					labels = list(labels[batch_size:len(labels)])
-
-		gen = sample_gen(batch_size)
+	def sample_gen(self,batch_size):
+		random.seed(1) # For reproducibility
+		chunk_sequences = []
+		location_sequences = []
+		coverage_matrices = []
 		while True:
-			chunks, labels = gen.next()
-			isfish_labels = labels[:,-1].astype(np.float32)
-			yield (chunks,isfish_labels)
+			index = random.sample(range(len(self.X_train)),1)[0]
+			chunk_matrix = chunk_image(self.n,self.X_train[index])
+			coverage_matrix = chunk_mask(self.n, chunk_matrix, self.y_masks_train[index])
+			chunk_sequence, location_sequence = detector_sequencer(chunk_matrix)
+			chunk_sequences.append(chunk_sequence)
+			location_sequences.append(location_sequence)
+			coverage_matrices.append(coverage_matrix)
+			if len(chunk_sequences) == batch_size:
+				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
+				location_sequences = pad_sequences(location_sequences).astype(np.float32)
+				coverage_matrices = np.array(coverage_matrices)
+				yield [chunk_sequences, location_sequences], coverage_matrices
+				chunk_sequences = []
+				location_sequences = []
+				coverage_matrices = []
 
 	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
@@ -93,12 +81,9 @@ class DetectorContainer:
 		
 		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
 		train_gen = self.sample_gen(batch_size)
-		
-		# Convert test labels to coverage only
-		y_test = self.y_test[:,-1].astype(np.float32)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
+			validation_data=([self.X_test_chunks, self.X_test_locations],self.y_test_coverage), verbose=1, callbacks=[model_checkpoint])
 
 	''' Produce matrix of scores for each chunk in each evaluation image. '''
 	def evaluate(self,weight_file):
