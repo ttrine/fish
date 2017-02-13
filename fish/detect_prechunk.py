@@ -15,28 +15,28 @@ y_masks_test = data['y_masks_test']
 def compute_and_write(n):
 	chunk_sequences = []
 	location_sequences = []
-	coverage_matrices = []
+	coverage_sequences = []
 	print "Generating sequences..."
 	for i in range(len(X_test)):
 		chunk_matrix = chunk_image(n,X_test[i])
 		coverage_matrix = chunk_mask(n,chunk_matrix,y_masks_test[i])
-		coverage_matrices.append(coverage_matrix)
 
-		chunk_sequence, location_sequence = detector_sequencer(chunk_matrix, coverage_matrix)
+		chunk_sequence, coverage_sequence, location_sequence = detector_sequencer(chunk_matrix, coverage_matrix)
 		
 		chunk_sequences.append(chunk_sequence)
+		coverage_sequences.append(coverage_sequence)
 		location_sequences.append(location_sequence)
 
 	print "Padding sequences (takes a while)..."
 	chunk_sequences = pad_sequences(chunk_sequences)
+	coverage_sequences = pad_sequences(coverage_sequences)
 	location_sequences = pad_sequences(location_sequences)
 
 	print chunk_sequences.shape
-	print coverage_matrices.shape
+	print coverage_sequences.shape
 	print location_sequences.shape
-	print class_labels.shape
 	np.save("data/train/binary/X_test_det_chunk_seqs_"+str(n),chunk_sequences)
-	np.save("data/train/binary/y_test_det_coverage_mats_"+str(n),coverage_matrices)
+	np.save("data/train/binary/y_test_det_coverage_seqs_"+str(n),coverage_sequences)
 	np.save("data/train/binary/X_test_det_loc_seqs_"+str(n),location_sequences)
 
 if __name__ == '__main__':
