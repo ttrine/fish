@@ -23,7 +23,7 @@ def random_sequencer(chunks,coverage):
 
 	return chunk_seq, location_seq
 
-# Put all nonblack image chunks into a random sequence
+# Put all nonblack image chunks into a sequence
 def detector_sequencer(chunks, coverage):
 	location_seq = []
 	for i in range(len(chunks)):

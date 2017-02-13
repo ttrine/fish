@@ -41,7 +41,8 @@ class DetectorContainer:
 
 		self.X_test_chunks = np.load('data/train/binary/X_test_det_chunk_seqs_256.npy')
 		self.X_test_locations = np.load('data/train/binary/X_test_det_loc_seqs_256.npy')
-		self.y_test_coverage = np.load('data/train/binary/y_test_det_coverage_mats_256.npy')
+		y_test_coverage = np.load('data/train/binary/y_test_det_coverage_seqs_256.npy')
+		self.y_test_coverage = y_test_coverage.reshape((y_test_coverage.shape[0], y_test_coverage.shape[1], 1))
 
 		self.n = n
 		
@@ -53,23 +54,24 @@ class DetectorContainer:
 		random.seed(1) # For reproducibility
 		chunk_sequences = []
 		location_sequences = []
-		coverage_matrices = []
+		coverage_sequences = []
 		while True:
 			index = random.sample(range(len(self.X_train)),1)[0]
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
 			coverage_matrix = chunk_mask(self.n, chunk_matrix, self.y_masks_train[index])
-			chunk_sequence, location_sequence = detector_sequencer(chunk_matrix)
+			chunk_sequence, coverage_sequence, location_sequence = detector_sequencer(chunk_matrix, coverage_matrix)
 			chunk_sequences.append(chunk_sequence)
+			coverage_sequences.append(coverage_sequence)
 			location_sequences.append(location_sequence)
-			coverage_matrices.append(coverage_matrix)
 			if len(chunk_sequences) == batch_size:
 				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
 				location_sequences = pad_sequences(location_sequences).astype(np.float32)
-				coverage_matrices = np.array(coverage_matrices)
-				yield [chunk_sequences, location_sequences], coverage_matrices
+				coverage_sequences = pad_sequences(coverage_sequences).astype(np.float32)
+				coverage_sequences = coverage_sequences.reshape((coverage_sequences.shape[0], coverage_sequences.shape[1], 1))
+				yield [chunk_sequences, location_sequences], coverage_sequences
 				chunk_sequences = []
 				location_sequences = []
-				coverage_matrices = []
+				coverage_sequences = []
 
 	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'

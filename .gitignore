@@ -7,3 +7,5 @@ data
 *.jpg
 Todo.txt
 .Rproj.user
+*.png
+*.out
