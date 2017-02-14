@@ -30,8 +30,9 @@ class ClassifierContainer:
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
 		self.X_test_chunk_seqs = np.load('data/train/binary/X_test_det_chunk_seqs_'+str(n)+'.npy')
+		X_test_pred_seqs = np.load('data/train/binary/X_test_pred_seqs_'+str(n)+'.npy')
+		self.X_test_pred_seqs = X_test_pred_seqs.reshape((X_test_pred_seqs.shape[0], X_test_pred_seqs.shape[1], 1))
 		self.X_test_loc_seqs = np.load('data/train/binary/X_test_det_loc_seqs_'+str(n)+'.npy')
-		self.X_test_pred_seqs = np.load('data/train/binary/X_test_pred_seqs_'+str(n)+'.npy')
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		self.n = n
