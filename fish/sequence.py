@@ -38,11 +38,10 @@ def detector_sequencer(chunks, coverage):
 	location_seq = np.array(location_seq)
 	coverage_seq = np.array(coverage_seq)
 
-	# I don't think I want to randomize order actually
-
-	# shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
-	# chunk_seq = chunk_seq[shuffle]
-	# location_seq = location_seq[shuffle]
+	shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
+	chunk_seq = chunk_seq[shuffle]
+	coverage_seq = coverage_seq[shuffle]
+	location_seq = location_seq[shuffle]
 	
 	return np.array(chunk_seq), np.array(coverage_seq), np.array(location_seq)
 
@@ -58,10 +57,8 @@ def detector_sequencer_inf(chunks):
 	chunk_seq = np.array(chunk_seq)
 	location_seq = np.array(location_seq)
 	
-	# I don't think I want to randomize order actually
-	
-	# shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
-	# chunk_seq = chunk_seq[shuffle]
-	# location_seq = location_seq[shuffle]
-	
+	shuffle = random.sample(range(len(chunk_seq)),len(chunk_seq))
+	chunk_seq = chunk_seq[shuffle]
+	location_seq = location_seq[shuffle]
+
 	return np.array(chunk_seq), np.array(location_seq)
