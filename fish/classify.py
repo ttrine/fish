@@ -9,7 +9,7 @@ from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import sequencer, random_sequencer
+from fish.sequence import detector_sequencer_inf, random_sequencer
 
 class ClassifierContainer:
 	def __init__(self,name,model,n,optimizer):
@@ -21,24 +21,18 @@ class ClassifierContainer:
 		# Load raw-ish data, parceled out into splits
 		data = h5py.File('data/train/binary/data.h5','r')
 		self.X_train = data['X_train']
-		self.y_masks_train = data['y_masks_train']
-		self.y_filenames_train = np.load('data/train/binary/y_filenames_train.npy')
 
 		# TODO: More principled way to manage loading detector outputs.
-		pred_matrices_train = np.load('data/train/binary/X_train_pred_mats_adam_256.npy')
-		self.coverage_matrices_train = (pred_matrices_train > .25).astype(np.uint8)
+		self.X_pred_seqs_train = np.load('data/train/binary/X_train_pred_seqs_256.npy')
 
 		# Convert class labels to 1-hot schema
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
-		try: # Test data must be precomputed
-			self.X_test_chunk_seqs = np.load('data/train/binary/X_test_inf_chunk_seqs_'+str(n)+'.npy')
-			self.X_test_loc_seqs = np.load('data/train/binary/X_test_inf_loc_seqs_'+str(n)+'.npy')
-			self.y_classes_test = np.load('data/train/binary/y_test_inf_classes_onehot_fish_'+str(n)+'.npy')
-		except:
-			print "Precomputed test data not found for that chunk size."
-			sys.exit()
+		self.X_test_chunk_seqs = np.load('data/train/binary/X_test_det_chunk_seqs_'+str(n)+'.npy')
+		self.X_test_loc_seqs = np.load('data/train/binary/X_test_det_loc_seqs_'+str(n)+'.npy')
+		self.X_test_pred_seqs = np.load('data/train/binary/X_test_pred_seqs_'+str(n)+'.npy')
+		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		self.n = n
 		
@@ -50,6 +44,7 @@ class ClassifierContainer:
 	def sample_gen(self,batch_size):
 		random.seed(1) # For reproducibility
 		chunk_sequences = []
+		pred_sequences = []
 		location_sequences = []
 		class_labels = []
 		while True:
@@ -57,19 +52,21 @@ class ClassifierContainer:
 
 			class_label = self.y_classes_train[index]
 			chunk_matrix = chunk_image(self.n,self.X_train[index])
-			coverage_matrix = self.coverage_matrices_train[index]
-			# coverage_matrix = chunk_mask(self.n,chunk_matrix,self.y_masks_train[index])
-			if not np.any(coverage_matrix): continue # No 0-length sequences please
-			chunk_sequence, location_sequence = random_sequencer(chunk_matrix, coverage_matrix)
+			pred_sequence = self.X_pred_seqs_train[index]
+			chunk_sequence, location_sequence = detector_sequencer_inf(chunk_matrix)
 			class_labels.append(class_label)
 			chunk_sequences.append(chunk_sequence)
+			pred_sequences.append(pred_sequence)
 			location_sequences.append(location_sequence)
 			if len(chunk_sequences) == batch_size:
 				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
+				pred_sequences = np.array(pred_sequences)[:,-chunk_sequences.shape[1]:]
+				pred_sequences = pred_sequences.reshape((pred_sequences.shape[0],pred_sequences.shape[1],1))
 				location_sequences = pad_sequences(location_sequences).astype(np.float32)
 				class_labels = np.array(class_labels)
-				yield [chunk_sequences, location_sequences], class_labels
+				yield [chunk_sequences, pred_sequences, location_sequences], class_labels
 				chunk_sequences = []
+				pred_sequences = []
 				location_sequences = []
 				class_labels = []
 
@@ -85,7 +82,7 @@ class ClassifierContainer:
 		train_gen = self.sample_gen(batch_size)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=([self.X_test_chunk_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
+			validation_data=([self.X_test_chunk_seqs,self.X_test_pred_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
 
 	''' Predict class for each chunked image in chunk_matrices 
 		given each prediction matrix and a threshold k. '''
@@ -107,3 +104,4 @@ class ClassifierContainer:
 				results.append(class_prediction)
 
 		return results
+
