@@ -39,7 +39,7 @@ def construct(n):
 	hadamard = merge([location_vectors, feature_vectors], mode='mul')
 
 	# Combine the feature-location sequences
-	rnn = LSTM(128, return_sequences=True)(hadamard)
+	rnn = LSTM(128, return_sequences=True, consume_less="GPU")(hadamard)
 
 	# Predict coverage matrix
 	fcn = TimeDistributed(Dense(128, activation='relu'))(rnn)
