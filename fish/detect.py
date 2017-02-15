@@ -8,7 +8,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.optimizers import Adam
 from keras import backend as K
 
-from fish.chunk import *
+from fish.chunk import chunk_mask, chunk_image
 from fish.sequence import detector_sequencer
 
 def read_boxes():
@@ -39,9 +39,9 @@ class DetectorContainer:
 		self.y_masks_train = data['y_masks_train']
 		self.y_boxes = read_boxes()
 
-		self.X_test_chunks = np.load('data/train/binary/X_test_det_chunk_seqs_256.npy')
-		self.X_test_locations = np.load('data/train/binary/X_test_det_loc_seqs_256.npy')
-		y_test_coverage = np.load('data/train/binary/y_test_det_coverage_seqs_256.npy')
+		self.X_test_chunks = np.load('data/train/binary/X_test_det_chunk_seqs_'+str(n)+'.npy')
+		self.X_test_locations = np.load('data/train/binary/X_test_det_loc_seqs_'+str(n)+'.npy')
+		y_test_coverage = np.load('data/train/binary/y_test_det_coverage_seqs_'+str(n)+'.npy')
 		self.y_test_coverage = y_test_coverage.reshape((y_test_coverage.shape[0], y_test_coverage.shape[1], 1))
 
 		self.n = n
