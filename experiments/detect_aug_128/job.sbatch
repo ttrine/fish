@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --partition=gpu --gres=gpu:1 --mem=64GB --time=2-00:00:00 -o /scratch/ttrine/fish/experiments/detect_aug_128/log.out
+#SBATCH --partition=gpu --gres=gpu:1 --mem=64GB --time=3-00:00:00 -o /scratch/ttrine/fish/experiments/detect_aug_128/log.out
 cd /scratch/ttrine/fish/
 module load python/2.7.12/b2 blas hdf5/1.8.14 cuda cudnn/7.5 git opencv
 module unload python/2.7.10
