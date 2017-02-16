@@ -9,7 +9,7 @@ from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import detector_sequencer_inf, random_sequencer
+from fish.sequence import detector_sequencer_inf
 
 class ClassifierContainer:
 	def __init__(self,name,model,n,optimizer):
@@ -23,16 +23,16 @@ class ClassifierContainer:
 		self.X_train = data['X_train']
 
 		# TODO: More principled way to manage loading detector outputs.
-		self.X_pred_seqs_train = np.load('data/train/binary/X_train_pred_seqs_256.npy')
+		self.X_pred_seqs_train = np.load('data/train/binary/X_train_pred_seqs_'+str(n)+'.npy')
 
 		# Convert class labels to 1-hot schema
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
-		self.X_test_chunk_seqs = np.load('data/train/binary/X_test_det_chunk_seqs_'+str(n)+'.npy')
+		self.X_test_chunk_seqs = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
 		X_test_pred_seqs = np.load('data/train/binary/X_test_pred_seqs_'+str(n)+'.npy')
 		self.X_test_pred_seqs = X_test_pred_seqs.reshape((X_test_pred_seqs.shape[0], X_test_pred_seqs.shape[1], 1))
-		self.X_test_loc_seqs = np.load('data/train/binary/X_test_det_loc_seqs_'+str(n)+'.npy')
+		self.X_test_loc_seqs = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		self.n = n
@@ -85,8 +85,7 @@ class ClassifierContainer:
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=([self.X_test_chunk_seqs,self.X_test_pred_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
 
-	''' Predict class for each chunked image in chunk_matrices 
-		given each prediction matrix and a threshold k. '''
+	''' TODO. Predict class for each image. '''
 	def evaluate(self,weight_file, chunk_matrices, prediction_matrices, k):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 

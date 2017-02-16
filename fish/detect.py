@@ -88,7 +88,7 @@ class DetectorContainer:
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=([self.X_test_chunks, self.X_test_locations],self.y_test_coverage), verbose=1, callbacks=[model_checkpoint])
 
-	''' Produce matrix of scores for each chunk in each evaluation image. '''
+	''' TODO. Produce sequence of scores for each chunk in each evaluation image. '''
 	def evaluate(self,weight_file):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
