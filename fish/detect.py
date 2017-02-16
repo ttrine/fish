@@ -52,6 +52,8 @@ class DetectorContainer:
 		while True:
 			images = image_gen.next()
 			masks = mask_gen.next()
+			if masks.shape != ((batch_size,974,1732,1)): # Fix unknown wrong-shape error during reshape
+				continue
 			masks = masks.reshape((batch_size,974,1732))
 
 			chunk_sequences = []
