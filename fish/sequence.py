@@ -2,8 +2,8 @@ import os
 import numpy as np
 import random
 
-# Put all nonblack image chunks into a sequence
-def detector_sequencer(chunks, coverage):
+# Put all nonblack image chunks into a random sequence
+def train_sequencer(chunks, coverage):
 	location_seq = []
 	for i in range(len(chunks)):
 		for j in range(len(chunks[i])):
@@ -24,7 +24,7 @@ def detector_sequencer(chunks, coverage):
 	
 	return np.array(chunk_seq), np.array(coverage_seq), np.array(location_seq)
 
-def detector_sequencer_inf(chunks):
+def eval_sequencer(chunks):
 	location_seq = []
 	for i in range(len(chunks)):
 		for j in range(len(chunks[i])):
@@ -40,18 +40,4 @@ def detector_sequencer_inf(chunks):
 	chunk_seq = chunk_seq[shuffle]
 	location_seq = location_seq[shuffle]
 
-	return np.array(chunk_seq), np.array(location_seq)
-
-def deterministic_sequencer_inf(chunks):
-	location_seq = []
-	for i in range(len(chunks)):
-		for j in range(len(chunks[i])):
-			if chunks[i,j] is not None:
-				location_seq.append((i, j))
-	
-	chunk_seq = [chunks[l] for l in location_seq]
-	
-	chunk_seq = np.array(chunk_seq)
-	location_seq = np.array(location_seq)
-	
 	return np.array(chunk_seq), np.array(location_seq)

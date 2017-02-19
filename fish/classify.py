@@ -9,67 +9,81 @@ from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import detector_sequencer_inf
+from fish.sequence import train_sequencer
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer):
+	def __init__(self,name,model,n,optimizer,datagen_args=dict()):
+		# Set instance variables
 		self.name = name
+		self.n = n
+		self.datagen_args = datagen_args
 
-		model.compile(optimizer=optimizer, loss="categorical_crossentropy")
+		# Compile model
+		model.compile(optimizer=optimizer, loss=[
+			"binary_crossentropy","categorical_crossentropy"])
 		self.model = model
 		
-		# Load raw-ish data, parceled out into splits
+		# Load train data
 		data = h5py.File('data/train/binary/data.h5','r')
 		self.X_train = data['X_train']
 
-		# TODO: More principled way to manage loading detector outputs.
-		self.X_pred_seqs_train = np.load('data/train/binary/X_train_pred_seqs_'+str(n)+'.npy')
-
-		# Convert class labels to 1-hot schema
+		y_masks_train = data['y_masks_train'][:]
+		self.y_masks_train = y_masks_train.reshape((3021,974,1732,1))
+	
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
-		self.X_test_chunk_seqs = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
-		X_test_pred_seqs = np.load('data/train/binary/X_test_pred_seqs_'+str(n)+'.npy')
-		self.X_test_pred_seqs = X_test_pred_seqs.reshape((X_test_pred_seqs.shape[0], X_test_pred_seqs.shape[1], 1))
-		self.X_test_loc_seqs = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
+		# Load test data
+		self.X_test_chunks = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
+		self.X_test_locations = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
+
+		y_test_coverage = np.load('data/train/binary/y_test_coverage_seqs_'+str(n)+'.npy')
+		self.y_test_coverage = y_test_coverage.reshape((y_test_coverage.shape[0], y_test_coverage.shape[1], 1))
+
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
-		self.n = n
-		
+		# Load eval data
 		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
 		self.X_eval = eval_data['X']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
 	# Returns a generator that produces sequences to train against
 	def sample_gen(self,batch_size):
-		random.seed(1) # For reproducibility
-		chunk_sequences = []
-		pred_sequences = []
-		location_sequences = []
-		class_labels = []
-		while True:
-			index = random.sample(range(len(self.X_train)),1)[0]
+		seed = 1 # For reproducibility
 
-			class_label = self.y_classes_train[index]
-			chunk_matrix = chunk_image(self.n,self.X_train[index])
-			pred_sequence = self.X_pred_seqs_train[index]
-			chunk_sequence, location_sequence = detector_sequencer_inf(chunk_matrix)
-			class_labels.append(class_label)
-			chunk_sequences.append(chunk_sequence)
-			pred_sequences.append(pred_sequence)
-			location_sequences.append(location_sequence)
-			if len(chunk_sequences) == batch_size:
-				chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
-				pred_sequences = np.array(pred_sequences)[:,-chunk_sequences.shape[1]:]
-				pred_sequences = pred_sequences.reshape((pred_sequences.shape[0],pred_sequences.shape[1],1))
-				location_sequences = pad_sequences(location_sequences).astype(np.float32)
-				class_labels = np.array(class_labels)
-				yield [chunk_sequences, pred_sequences, location_sequences], class_labels
-				chunk_sequences = []
-				pred_sequences = []
-				location_sequences = []
-				class_labels = []
+		image_datagen = ImageDataGenerator(**self.datagen_args)
+		mask_datagen = ImageDataGenerator(**self.datagen_args)
+
+		image_gen = image_datagen.flow(self.X_train,self.y_classes_train,batch_size=batch_size,seed=seed)
+		mask_gen = mask_datagen.flow(self.y_masks_train,None,batch_size=batch_size,seed=seed)
+
+		while True:
+			images, classes = image_gen.next()
+			masks = mask_gen.next()
+			if masks.shape != ((batch_size,974,1732,1)): # Fix unknown wrong-shape error during reshape
+				continue
+			masks = masks.reshape((batch_size,974,1732))
+
+			chunk_sequences = []
+			location_sequences = []
+			coverage_sequences = []
+			class_labels = []
+			for i in range(len(images)):
+				chunk_matrix = chunk_image(self.n,images[i])
+				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i])
+				chunk_sequence, coverage_sequence, location_sequence = train_sequencer(chunk_matrix, coverage_matrix)
+				chunk_sequences.append(chunk_sequence)
+				location_sequences.append(location_sequence)
+				coverage_sequences.append(coverage_sequence)
+				class_labels.append(classes[i])
+
+			chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
+			location_sequences = pad_sequences(location_sequences).astype(np.float32)
+			coverage_sequences = pad_sequences(coverage_sequences).astype(np.float32)
+			coverage_sequences = coverage_sequences.reshape((coverage_sequences.shape[0], coverage_sequences.shape[1], 1))
+			class_labels = np.array(class_labels)
+
+			yield [chunk_sequences, location_sequences], [coverage_sequences, class_labels]
 
 	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
@@ -83,7 +97,7 @@ class ClassifierContainer:
 		train_gen = self.sample_gen(batch_size)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=([self.X_test_chunk_seqs,self.X_test_pred_seqs,self.X_test_loc_seqs],self.y_classes_test), verbose=1, callbacks=[model_checkpoint])
+			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=[model_checkpoint])
 
 	''' TODO. Predict class for each image. '''
 	def evaluate(self,weight_file, chunk_matrices, prediction_matrices, k):
@@ -104,4 +118,3 @@ class ClassifierContainer:
 				results.append(class_prediction)
 
 		return results
-

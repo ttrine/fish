@@ -1,0 +1,65 @@
+from keras.models import Model
+
+from keras.layers import Input, Dense, Flatten, merge, Reshape, BatchNormalization, ZeroPadding2D, Convolution2D, MaxPooling2D
+from keras.layers.core import Masking, RepeatVector
+from keras.layers.wrappers import TimeDistributed
+from keras.layers.recurrent import LSTM
+
+from fish.classify import ClassifierContainer
+
+def construct(n):
+	input_chunks = Input(shape=(None,n,n,3))
+	chunks = BatchNormalization()(input_chunks)
+
+	input_locations = Input(shape=(None,2))
+	locations = BatchNormalization()(input_locations)
+
+	# Glimpse net. Architecture inspired by DRAM paper.
+	chunks = TimeDistributed(ZeroPadding2D((3, 3)))(chunks)
+	chunks = TimeDistributed(Convolution2D(16, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
+
+	chunks = TimeDistributed(ZeroPadding2D((3, 3)))(chunks)
+	chunks = TimeDistributed(Convolution2D(32, 5, 5, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
+
+	chunks = TimeDistributed(ZeroPadding2D((1, 1)))(chunks)
+	chunks = TimeDistributed(Convolution2D(64, 3, 3, activation='relu'))(chunks)
+	chunks = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))(chunks)
+
+	flattened_chunks = TimeDistributed(Flatten())(chunks)
+	flattened_chunks = Masking()(flattened_chunks)
+	feature_vectors = TimeDistributed(Dense(128,activation='relu'))(flattened_chunks)
+
+	# Location encoder
+	location_vectors = TimeDistributed(Dense(128,activation='relu'))(locations)
+	location_vectors = Masking()(location_vectors)
+	
+	# Multiplicative where-what interaction
+	hadamard_1 = merge([location_vectors, feature_vectors], mode='mul')
+
+	# Combine the feature-location sequences and predict coverage sequence
+	detect_rnn = LSTM(128, return_sequences=True, consume_less="gpu")(hadamard_1)
+	detect_fcn = TimeDistributed(Dense(64,activation='relu'))(detect_rnn)
+	cov_pr = TimeDistributed(Dense(1,activation='softmax'))(detect_fcn)
+
+	# Combine the feature-location sequences, scale by coverage probability, predict class
+	cov_pr_repeated = TimeDistributed(RepeatVector(128))(cov_pr)
+	cov_pr_repeated = TimeDistributed(Reshape((128,)))(cov_pr_repeated)
+	hadamard_2 = merge([cov_pr_repeated, hadamard_1], mode='mul')
+	classify_rnn = LSTM(128, consume_less="gpu")(hadamard_2)
+	classify_fcn = Dense(64,activation='relu')(classify_rnn)
+	class_pr = Dense(8,activation='softmax')(classify_fcn)
+
+	return Model(input=[input_chunks,input_locations],output=[cov_pr,class_pr])
+
+if __name__ == '__main__':
+	import sys # basic arg parsing, infer name
+	name = sys.argv[0].split('/')[-2]
+	
+	if len(sys.argv) < 4:
+		print "Usage: train nb_epoch batch_size samples_per_epoch"
+		sys.exit()
+
+	model = ClassifierContainer(name,construct(128),128,"adam")
+	model.train(nb_epoch=int(sys.argv[1]), batch_size=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]))
