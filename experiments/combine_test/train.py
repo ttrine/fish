@@ -41,7 +41,7 @@ def construct(n):
 	# Combine the feature-location sequences and predict coverage sequence
 	detect_rnn = LSTM(128, return_sequences=True, consume_less="gpu")(hadamard_1)
 	detect_fcn = TimeDistributed(Dense(64,activation='relu'))(detect_rnn)
-	cov_pr = TimeDistributed(Dense(1,activation='sigmoid'))(detect_fcn)
+	cov_pr = TimeDistributed(Dense(1,activation='sigmoid'),name="coverage")(detect_fcn)
 
 	# Combine the feature-location sequences, scale by coverage probability, predict class
 	cov_pr_repeated = TimeDistributed(RepeatVector(128))(cov_pr)
@@ -49,7 +49,7 @@ def construct(n):
 	hadamard_2 = merge([cov_pr_repeated, hadamard_1], mode='mul')
 	classify_rnn = LSTM(128, consume_less="gpu")(hadamard_2)
 	classify_fcn = Dense(64,activation='relu')(classify_rnn)
-	class_pr = Dense(8,activation='softmax')(classify_fcn)
+	class_pr = Dense(8,activation='softmax',name="class")(classify_fcn)
 
 	return Model(input=[input_chunks,input_locations],output=[cov_pr,class_pr])
 
