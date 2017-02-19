@@ -8,6 +8,8 @@ from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
 from keras.preprocessing.sequence import pad_sequences
 
+from keras.preprocessing.image import ImageDataGenerator
+
 from fish.chunk import chunk_mask, chunk_image
 from fish.sequence import train_sequencer
 
