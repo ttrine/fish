@@ -14,7 +14,7 @@ from fish.chunk import chunk_mask, chunk_image
 from fish.sequence import train_sequencer
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer,datagen_args=dict()):
+	def __init__(self,name,model,n,optimizer,loss_weights=[1.,1.],datagen_args=dict()):
 		# Set instance variables
 		self.name = name
 		self.n = n
@@ -22,7 +22,7 @@ class ClassifierContainer:
 
 		# Compile model
 		model.compile(optimizer=optimizer, loss=[
-			"binary_crossentropy","categorical_crossentropy"])
+			"binary_crossentropy","categorical_crossentropy"], loss_weights=loss_weights)
 		self.model = model
 		
 		# Load train data
