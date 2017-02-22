@@ -14,15 +14,20 @@ from fish.chunk import chunk_mask, chunk_image
 from fish.sequence import train_sequencer, eval_sequencer
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer,loss_weights=[1.,1.],datagen_args=dict()):
+	def __init__(self,name,model,n,optimizer,loss_weights=None,datagen_args=dict()):
 		# Set instance variables
 		self.name = name
 		self.n = n
 		self.datagen_args = datagen_args
 
 		# Compile model
-		model.compile(optimizer=optimizer, loss=[
-			"binary_crossentropy","categorical_crossentropy"], loss_weights=loss_weights)
+		if loss_weights is not None:
+			model.compile(optimizer=optimizer, loss=[
+				"binary_crossentropy","categorical_crossentropy"], loss_weights=loss_weights)
+		else:
+			model.compile(optimizer=optimizer, loss=[
+				"binary_crossentropy","categorical_crossentropy"])
+
 		self.model = model
 		
 		# Load train data
