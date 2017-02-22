@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, csv
 import random
 import numpy as np
 import pandas
@@ -11,7 +11,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.image import ImageDataGenerator
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import train_sequencer
+from fish.sequence import train_sequencer, eval_sequencer
 
 class ClassifierContainer:
 	def __init__(self,name,model,n,optimizer,loss_weights=[1.,1.],datagen_args=dict()):
@@ -28,6 +28,7 @@ class ClassifierContainer:
 		# Load train data
 		data = h5py.File('data/train/binary/data.h5','r')
 		self.X_train = data['X_train']
+		self.X_test = data['X_test']
 
 		y_masks_train = data['y_masks_train'][:]
 		self.y_masks_train = y_masks_train.reshape((3021,974,1732,1))
@@ -102,21 +103,29 @@ class ClassifierContainer:
 			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=[model_checkpoint])
 
 	''' TODO. Predict class for each image. '''
-	def evaluate(self,weight_file, chunk_matrices, prediction_matrices, k):
+	def evaluate(self,weight_file):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
-		results = []
-		for i in range(len(chunk_matrices)):
-			chunk_matrix = chunk_matrices[i]
-			coverage_matrix = (prediction_matrices[i] > k).astype(np.float32)
-			if not np.any(coverage_matrix): # Set pr of class nofish to 1
-				results.append(np.array([0., 0., 0., 0., 1., 0., 0., 0.]))
-			else: # Form a 1-sequence batch and classify it
-				chunk_seq, location_seq = sequencer(chunk_matrix,coverage_matrix)
-				chunk_seq = chunk_seq.reshape((1,chunk_seq.shape[0],self.n,self.n,3)).astype(np.float32)
-				location_seq = location_seq.reshape((1,location_seq.shape[0],2))
-				if i % 50 == 0: print str(i) + " images processed by classifier."
-				class_prediction = self.model.predict([chunk_seq,location_seq])[0]
-				results.append(class_prediction)
+		chunk_matrices = []
+		[chunk_matrices.append(chunk_image(128,img)) for img in self.X_eval]
 
-		return results
+		chunk_sequences = []
+		location_sequences = []
+		for chunk_matrix in chunk_matrices:
+			chunk_sequence, location_sequence = eval_sequencer(chunk_matrix)
+			chunk_sequences.append(chunk_sequence)
+			location_sequences.append(location_sequence)
+
+		chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
+		location_sequences = pad_sequences(location_sequences).astype(np.float32)
+
+		predictions = self.model.predict([chunk_sequences,location_sequences], verbose=True)[1]
+
+		f = file('experiments/'+self.name+'/submission.csv','wb')
+		w = csv.writer(f)
+		w.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
+		rows = [[filename] for filename in filenames_eval]
+		[rows[i].extend(list(predictions[i])) for i in range(1000)]
+		w.writerows(rows)
+		f.close()
+		print "Wrote submission.csv file in project folder."
