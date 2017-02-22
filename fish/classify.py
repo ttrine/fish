@@ -103,9 +103,10 @@ class ClassifierContainer:
 			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=[model_checkpoint])
 
 	''' TODO. Predict class for each image. '''
-	def evaluate(self,weight_file):
+	def evaluate(self,weight_file,clip=False):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
+		print "Chunking and sequencing..."
 		chunk_matrices = []
 		[chunk_matrices.append(chunk_image(128,img)) for img in self.X_eval]
 
@@ -116,10 +117,14 @@ class ClassifierContainer:
 			chunk_sequences.append(chunk_sequence)
 			location_sequences.append(location_sequence)
 
+		print "Padding sequences (takes a while)..."
 		chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
 		location_sequences = pad_sequences(location_sequences).astype(np.float32)
 
+		print "Running inference..."
 		predictions = self.model.predict([chunk_sequences,location_sequences], verbose=True)[1]
+		if clip:
+			predictions = np.clip(predictions,0.02, 0.98, out=None)
 
 		f = file('experiments/'+self.name+'/submission.csv','wb')
 		w = csv.writer(f)
@@ -128,4 +133,4 @@ class ClassifierContainer:
 		[rows[i].extend(list(predictions[i])) for i in range(1000)]
 		w.writerows(rows)
 		f.close()
-		print "Wrote submission.csv file in project folder."
+		print "Done. Wrote experiments/"+self.name+"/submission.csv."
