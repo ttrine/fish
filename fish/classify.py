@@ -129,7 +129,7 @@ class ClassifierContainer:
 		f = file('experiments/'+self.name+'/submission.csv','wb')
 		w = csv.writer(f)
 		w.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
-		rows = [[filename] for filename in filenames_eval]
+		rows = [[filename] for filename in self.filenames_eval]
 		[rows[i].extend(list(predictions[i])) for i in range(1000)]
 		w.writerows(rows)
 		f.close()
