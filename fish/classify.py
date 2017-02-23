@@ -52,7 +52,7 @@ class ClassifierContainer:
 
 		# Load eval data
 		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
-		self.X_eval = eval_data['X']
+		self.X_eval = eval_data['X_eval']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
 	# Returns a generator that produces sequences to train against
