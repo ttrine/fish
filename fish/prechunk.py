@@ -11,7 +11,6 @@ data = h5py.File('data/train/binary/data.h5','r')
 
 X_test = data['X_test']
 y_masks_test = data['y_masks_test']
-y_classes_test = np.load('data/train/binary/y_classes_test.npy')
 
 def compute_and_write(n):
 	chunk_sequences = []
@@ -32,7 +31,7 @@ def compute_and_write(n):
 	chunk_sequences = pad_sequences(chunk_sequences)
 	coverage_sequences = pad_sequences(coverage_sequences)
 	location_sequences = pad_sequences(location_sequences)
-
+	y_classes_test = np.load('data/train/binary/y_classes_test.npy')
 	y_classes_test = np_utils.to_categorical(pandas.factorize(y_classes_test, sort=True)[0])
 
 	print "Saving arrays..."
