@@ -25,6 +25,7 @@ class LogisticLossDecay(Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.loss_weight = K.variable(self.L / (1 + math.exp(-self.k*(self.x-self.x0))) + self.s)
         self.x += 1
+        print "Coverage loss weight: " + str(K.get_value(self.model.loss_weights[0]))
 
 def construct(n):
 	input_chunks = Input(shape=(None,n,n,3))
