@@ -23,9 +23,9 @@ class LogisticLossDecay(Callback):
         self.s = s
 
     def on_epoch_end(self, epoch, logs={}):
-    	K.set_value(self.loss_weight, self.L / (1 + math.exp(-self.k*(self.x-self.x0))) + self.s)
+    	self.model.loss_weights[0] = self.L / (1 + math.exp(-self.k*(self.x-self.x0))) + self.s
         self.x += 1
-        print "Coverage loss weight: " + str(K.get_value(self.model.loss_weights[0]))
+        print "Coverage loss weight: " + str(self.model.loss_weights[0])
 
 def construct(n):
 	input_chunks = Input(shape=(None,n,n,3))
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 		sys.exit()
 
 	# Decay coverage loss to 1 as a logistic function of epoch
-	cov_loss_weight = K.variable(2.)
+	cov_loss_weight = 2.
 	cov_decay = LogisticLossDecay(cov_loss_weight, -1., .5, 20, 2.)
 
 	model = ClassifierContainer(name,construct(128),128,"adam", loss_weights=[cov_loss_weight, 1.], callbacks=[cov_decay])
