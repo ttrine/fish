@@ -14,7 +14,7 @@ from fish.chunk import chunk_mask, chunk_image
 from fish.sequence import train_sequencer, eval_sequencer
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer,loss_weights=None,datagen_args=dict()):
+	def __init__(self,name,model,n,optimizer,loss_weights=None,datagen_args=dict(),callbacks=[]):
 		# Set instance variables
 		self.name = name
 		self.n = n
@@ -54,6 +54,8 @@ class ClassifierContainer:
 		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
 		self.X_eval = eval_data['X_eval']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
+
+		self.callbacks = callbacks
 
 	# Returns a generator that produces sequences to train against
 	def sample_gen(self,batch_size):
@@ -102,10 +104,11 @@ class ClassifierContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
+		self.callbacks.append(model_checkpoint)
 		train_gen = self.sample_gen(batch_size)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=[model_checkpoint])
+			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=self.callbacks)
 
 	''' TODO. Predict class for each image. '''
 	def evaluate(self,weight_file,clip=False):
