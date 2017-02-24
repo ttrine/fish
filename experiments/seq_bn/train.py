@@ -2,14 +2,12 @@ import theano
 
 from keras.models import Model
 
-from experiments.combine_grad.train import GradientReversalLayer
-
 from keras.layers import Input, Dense, Flatten, merge, Reshape, ZeroPadding2D, Convolution2D, MaxPooling2D
 from keras.layers.core import Masking, RepeatVector
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
 
-from fish.layers import SequenceBatchNormalization
+from fish.layers import SequenceBatchNormalization, GradientReversalLayer
 from fish.classify import ClassifierContainer
 
 def construct(n):
