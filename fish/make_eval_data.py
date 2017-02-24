@@ -8,7 +8,7 @@ def make_eval_data():
 	filenames = os.listdir(IMG_DIR)
 
 	# Put each image in the top-left of a tensor
-	X_eval = np.zeros((1000,974,1732,3))
+	X_eval = np.zeros((1000,974,1732,3), dtype=np.uint8)
 	for i, filename in enumerate(filenames):
 		img = cv2.imread(IMG_DIR + filename)
 		X_eval[i,0:img.shape[0],0:img.shape[1]] = img
