@@ -9,7 +9,7 @@ from keras import backend as K
 from keras.callbacks import Callback
 import math
 
-from fish.layers import SequenceBatchNormalization, GradientReversalLayer
+from fish.layers import SequenceBatchNormalization
 from fish.classify import ClassifierContainer
 
 # Callback that decays loss weight according to a paramaterized logistic function
@@ -25,7 +25,7 @@ class LogisticLossDecay(Callback):
     def on_epoch_end(self, epoch, logs={}):
     	self.model.loss_weights[0] = self.L / (1 + math.exp(-self.k*(self.x-self.x0))) + self.s
         self.x += 1
-        print "Coverage loss weight: " + str(self.model.loss_weights[0])
+        print " coverage loss weight: " + str(self.model.loss_weights[0])
 
 def construct(n):
 	input_chunks = Input(shape=(None,n,n,3))
@@ -60,11 +60,10 @@ def construct(n):
 
 	# Combine the feature-location sequences and predict coverage sequence
 	detect_rnn = LSTM(128, return_sequences=True, activation='sigmoid', consume_less="gpu")(hadamard_1)
-	detect_rnn_nograd = TimeDistributed(GradientReversalLayer(0))(detect_rnn)
 	detect_fcn = TimeDistributed(Dense(64,activation='relu'))(detect_rnn)
 	cov_pr = TimeDistributed(Dense(1,activation='sigmoid'),name="coverage")(detect_fcn)
 
-	hadamard_2 = merge([detect_rnn_nograd, hadamard_1], mode='mul')
+	hadamard_2 = merge([detect_rnn, hadamard_1], mode='mul')
 
 	# Gate according to output of detect RNN and predict class
 	classify_rnn = LSTM(128, consume_less="gpu")(hadamard_2)
