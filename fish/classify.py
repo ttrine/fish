@@ -30,10 +30,10 @@ class ClassifierContainer:
 
 		self.model = model
 		
-		# Load train data
 		data = h5py.File('data/train/binary/data.h5','r')
+
+		# Load train data
 		self.X_train = data['X_train']
-		self.X_test = data['X_test']
 
 		y_masks_train = data['y_masks_train'][:]
 		self.y_masks_train = y_masks_train.reshape((3021,974,1732,1))
@@ -42,12 +42,8 @@ class ClassifierContainer:
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
 		# Load test data
-		self.X_test_chunks = np.load('data/train/binary/X_test_chunk_seqs_'+str(n)+'.npy')
-		self.X_test_locations = np.load('data/train/binary/X_test_loc_seqs_'+str(n)+'.npy')
-
-		y_test_coverage = np.load('data/train/binary/y_test_coverage_seqs_'+str(n)+'.npy')
-		self.y_test_coverage = y_test_coverage.reshape((y_test_coverage.shape[0], y_test_coverage.shape[1], 1))
-
+		self.X_test = data['X_test']
+		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy')
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		# Load eval data
@@ -74,26 +70,19 @@ class ClassifierContainer:
 				continue
 			masks = masks.reshape((batch_size,974,1732))
 
-			chunk_sequences = []
-			location_sequences = []
-			coverage_sequences = []
+			coverage_matrices = []
 			class_labels = []
 			for i in range(len(images)):
 				chunk_matrix = chunk_image(self.n,images[i])
 				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i])
-				chunk_sequence, coverage_sequence, location_sequence = train_sequencer(chunk_matrix, coverage_matrix)
-				chunk_sequences.append(chunk_sequence)
-				location_sequences.append(location_sequence)
-				coverage_sequences.append(coverage_sequence)
+				
+				coverage_matrices.append(coverage_matrix)
 				class_labels.append(classes[i])
 
-			chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
-			location_sequences = pad_sequences(location_sequences).astype(np.float32)
-			coverage_sequences = pad_sequences(coverage_sequences).astype(np.float32)
-			coverage_sequences = coverage_sequences.reshape((coverage_sequences.shape[0], coverage_sequences.shape[1], 1))
+			coverage_matrices = np.array(coverage_matrices)
 			class_labels = np.array(class_labels)
 
-			yield [chunk_sequences, location_sequences], [coverage_sequences, class_labels]
+			yield images, [coverage_matrices, class_labels]
 
 	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
@@ -108,29 +97,16 @@ class ClassifierContainer:
 		train_gen = self.sample_gen(batch_size)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=([self.X_test_chunks,self.X_test_locations],[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=self.callbacks)
+			validation_data=(self.X_test,[self.y_test_coverage,self.y_classes_test]), verbose=1, callbacks=self.callbacks)
 
 	''' TODO. Predict class for each image. '''
 	def evaluate(self,weight_file,clip=False):
 		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
 
-		print "Chunking and sequencing..."
-		chunk_matrices = []
-		[chunk_matrices.append(chunk_image(128,img)) for img in self.X_eval]
-
-		chunk_sequences = []
-		location_sequences = []
-		for chunk_matrix in chunk_matrices:
-			chunk_sequence, location_sequence = eval_sequencer(chunk_matrix)
-			chunk_sequences.append(chunk_sequence)
-			location_sequences.append(location_sequence)
-
-		print "Padding sequences (takes a while)..."
-		chunk_sequences = pad_sequences(chunk_sequences).astype(np.float32)
-		location_sequences = pad_sequences(location_sequences).astype(np.float32)
-
 		print "Running inference..."
-		predictions = self.model.predict([chunk_sequences,location_sequences], verbose=True)[1]
+
+		predictions = self.model.predict(self.X_eval, verbose=True)[1]
+		
 		if clip:
 			predictions = np.clip(predictions,0.02, 0.98, out=None)
 
