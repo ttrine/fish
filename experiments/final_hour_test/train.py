@@ -35,13 +35,17 @@ def construct():
 	conv6 = ZeroPadding2D((1, 1))(conv5)
 	conv6 = Convolution2D(256, 3, 3, activation='relu')(conv6)
 	conv6 = ZeroPadding2D((2, 2))(conv6)
-	conv6 = Convolution2D(1, 3, 3, activation='relu')(conv6)
+	conv6 = Convolution2D(1, 3, 3, activation='sigmoid')(conv6)
 	conv6 = MaxPooling2D(pool_size=(2, 2))(conv6)
 
 	# Shave off channel dimension
 	pred_mat = Reshape((16,28))(conv6)
 
 	return Model(input=imgs,output=pred_mat)
+
+datagen_args = dict(
+	rescale = 0.5
+)
 
 if __name__ == '__main__':
 	import sys # basic arg parsing, infer name
@@ -51,5 +55,5 @@ if __name__ == '__main__':
 		print "Usage: train nb_epoch batch_size samples_per_epoch"
 		sys.exit()
 
-	model = DetectorContainer(name,construct(),64,"adam")
+	model = DetectorContainer(name,construct(),64,"adam", datagen_args=datagen_args)
 	model.train(nb_epoch=int(sys.argv[1]), batch_size=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]))
