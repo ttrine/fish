@@ -11,7 +11,6 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.image import ImageDataGenerator
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import train_sequencer, eval_sequencer
 
 class DetectorContainer:
 	def __init__(self,name,model,n,optimizer,datagen_args=dict(),callbacks=[]):

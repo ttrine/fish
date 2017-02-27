@@ -11,38 +11,30 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.image import ImageDataGenerator
 
 from fish.chunk import chunk_mask, chunk_image
-from fish.sequence import train_sequencer, eval_sequencer
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer,loss_weights=None,datagen_args=dict(),callbacks=[]):
+	def __init__(self,name,model,n,optimizer,datagen_args=dict(),callbacks=[]):
 		# Set instance variables
 		self.name = name
 		self.n = n
 		self.datagen_args = datagen_args
 
 		# Compile model
-		if loss_weights is not None:
-			model.compile(optimizer=optimizer, loss=[
-				"binary_crossentropy","categorical_crossentropy"], loss_weights=loss_weights)
-		else:
-			model.compile(optimizer=optimizer, loss=[
-				"binary_crossentropy","categorical_crossentropy"])
+		model.compile(optimizer=optimizer, loss="binary_crossentropy")
 
 		self.model = model
 		
-		data = h5py.File('data/train/binary/data.h5','r')
-
 		# Load train data
-		self.X_train = data['X_train']
+		self.X_train = np.load('data/train/binary/X_train_2.npy')
 
-		y_masks_train = data['y_masks_train'][:]
-		self.y_masks_train = y_masks_train.reshape((3021,974,1732,1))
+		y_masks_train = np.load('data/train/binary/y_masks_train_2.npy')
+		self.y_masks_train = y_masks_train.reshape((3021,487,866,1))
 	
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
 		# Load test data
-		self.X_test = data['X_test']
+		self.X_test = np.load('data/train/binary/X_test_2.npy')
 		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy')
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
@@ -66,15 +58,15 @@ class ClassifierContainer:
 		while True:
 			images, classes = image_gen.next()
 			masks = mask_gen.next()
-			if masks.shape != ((batch_size,974,1732,1)): # Fix unknown wrong-shape error during reshape
+			if masks.shape != ((batch_size,487, 866,1)): # Fix unknown wrong-shape error during reshape
 				continue
-			masks = masks.reshape((batch_size,974,1732))
+			masks = masks.reshape((batch_size,487, 866))
 
 			coverage_matrices = []
 			class_labels = []
 			for i in range(len(images)):
-				chunk_matrix = chunk_image(self.n,images[i])
-				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i])
+				chunk_matrix = chunk_image(self.n,images[i], 2)
+				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i], 2)
 				
 				coverage_matrices.append(coverage_matrix)
 				class_labels.append(classes[i])
@@ -106,7 +98,7 @@ class ClassifierContainer:
 		print "Running inference..."
 
 		predictions = self.model.predict(self.X_eval, verbose=True)[1]
-		
+
 		if clip:
 			predictions = np.clip(predictions,0.02, 0.98, out=None)
 
