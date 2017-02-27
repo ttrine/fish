@@ -66,8 +66,8 @@ class DetectorContainer:
 			coverage_matrices = []
 			class_labels = []
 			for i in range(len(images)):
-				chunk_matrix = chunk_image(self.n,images[i])
-				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i])
+				chunk_matrix = chunk_image(self.n,images[i], 2)
+				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i], 2)
 				
 				coverage_matrices.append(coverage_matrix)
 				class_labels.append(classes[i])
