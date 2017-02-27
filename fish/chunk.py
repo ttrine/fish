@@ -2,10 +2,9 @@ import math
 import numpy as np
 
 ''' Returns coverage matrix. '''
-def chunk_mask(n,chunk_matrix,mask):
-	ncol = int(math.ceil(float(1732)/float(n)))
-	nrow = int(math.ceil(float(974)/float(n)))
-
+def chunk_mask(n,chunk_matrix,mask,resize_factor = 1):
+	ncol = int(math.ceil(float(1732/resize_factor)/float(n)))
+	nrow = int(math.ceil(float(974/resize_factor)/float(n)))
 	coverage_matrix = np.zeros((nrow,ncol), dtype=np.uint8)
 
 	for j in range(ncol):
@@ -24,10 +23,9 @@ def chunk_mask(n,chunk_matrix,mask):
 	return coverage_matrix
 
 ''' Returns chunk matrix. '''
-def chunk_image(n,img):
-	ncol = int(math.ceil(float(1732)/float(n)))
-	nrow = int(math.ceil(float(974)/float(n)))
-
+def chunk_image(n,img,resize_factor = 1):
+	ncol = int(math.ceil(float(1732/resize_factor)/float(n)))
+	nrow = int(math.ceil(float(974/resize_factor)/float(n)))
 	img_chunks = np.ndarray((nrow,ncol), dtype=object)
 
 	for i in range(nrow):

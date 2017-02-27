@@ -25,20 +25,18 @@ class DetectorContainer:
 
 		self.model = model
 		
-		data = h5py.File('data/train/binary/data.h5','r')
-
 		# Load train data
-		self.X_train = data['X_train']
+		self.X_train = np.load('data/train/binary/X_train_2.npy')
 
-		y_masks_train = data['y_masks_train'][:]
-		self.y_masks_train = y_masks_train.reshape((3021,974,1732,1))
+		y_masks_train = np.load('data/train/binary/y_masks_train_2.npy')
+		self.y_masks_train = y_masks_train.reshape((3021,487,866,1))
 	
 		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
 		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
 		# Load test data
-		self.X_test = data['X_test']
-		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy')
+		self.X_test = np.load('data/train/binary/X_test_2.npy')
+		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy').reshape((756,16,28,1))
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		# Load eval data
