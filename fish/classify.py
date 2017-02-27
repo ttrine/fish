@@ -20,7 +20,7 @@ class ClassifierContainer:
 		self.datagen_args = datagen_args
 
 		# Compile model
-		model.compile(optimizer=optimizer, loss="binary_crossentropy")
+		model.compile(optimizer=optimizer, loss=["binary_crossentropy","categorical_crossentropy"])
 
 		self.model = model
 		
