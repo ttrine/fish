@@ -8,9 +8,10 @@ def make_eval_data():
 	filenames = os.listdir(IMG_DIR)
 
 	# Put each image in the top-left of a tensor
-	X_eval = np.zeros((1000,974,1732,3), dtype=np.uint8)
+	X_eval = np.zeros((1000,974/2,1732/2,3), dtype=np.uint8)
 	for i, filename in enumerate(filenames):
 		img = cv2.imread(IMG_DIR + filename)
+		img = cv2.resize(img,(1732/2,974/2))
 		X_eval[i,0:img.shape[0],0:img.shape[1]] = img
 
 	# Create hdf5 dataset for X_eval
