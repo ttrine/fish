@@ -38,10 +38,23 @@ def construct():
 	# Shave off channel dimension
 	pred_mat = Reshape((16,28),name="coverage")(conv_coverage)
 
-	conv_class = ZeroPadding2D((1, 1))(conv5)
-	conv_class = Convolution2D(256, 3, 3, activation='relu')(conv_class)
+	conv_class1 = ZeroPadding2D((1, 1))(conv5)
+	conv_class1 = Convolution2D(256, 3, 3, activation='relu')(conv_class1)
+	conv_class1 = MaxPooling2D(pool_size=(2, 2))(conv_class1)
 
-	fcn_class = Flatten()(conv_class)
+	conv_class2 = ZeroPadding2D((1, 1))(conv_class1)
+	conv_class2 = Convolution2D(256, 3, 3, activation='relu')(conv_class2)
+	conv_class2 = MaxPooling2D(pool_size=(2, 2))(conv_class2)
+
+	conv_class3 = ZeroPadding2D((1, 1))(conv_class2)
+	conv_class3 = Convolution2D(256, 3, 3, activation='relu')(conv_class3)
+	conv_class3 = MaxPooling2D(pool_size=(2, 2))(conv_class3)
+
+	conv_class4 = ZeroPadding2D((1, 1))(conv_class3)
+	conv_class4 = Convolution2D(256, 3, 3, activation='relu')(conv_class4)
+	conv_class4 = MaxPooling2D(pool_size=(2, 2))(conv_class4)
+
+	fcn_class = Flatten()(conv_class4)
 	fcn_class = Dense(128, activation='relu')(fcn_class)
 	fcn_class = Dense(128, activation='relu')(fcn_class)
 	class_vec = Dense(8, activation='softmax', name="class")(fcn_class)
