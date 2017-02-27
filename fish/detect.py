@@ -36,7 +36,7 @@ class DetectorContainer:
 
 		# Load test data
 		self.X_test = np.load('data/train/binary/X_test_2.npy')
-		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy').reshape((756,16,28,1))
+		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy')
 		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
 
 		# Load eval data

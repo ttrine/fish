@@ -35,9 +35,9 @@ def construct():
 	conv5 = MaxPooling2D(pool_size=(2, 2))(conv5)
 
 	# Shave off channel dimension
-	# pred_mat = Reshape((16,28))(conv6)
+	pred_mat = Reshape((16,28))(conv5)
 
-	return Model(input=imgs,output=conv5)
+	return Model(input=imgs,output=pred_mat)
 
 if __name__ == '__main__':
 	import sys # basic arg parsing, infer name
