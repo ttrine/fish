@@ -9,5 +9,5 @@ if __name__ == '__main__':
 		print "Usage: submit weight_file clip"
 		sys.exit()
 
-	c = ClassifierContainer(name,construct(),64,"adam")
+	c = ClassifierContainer(name,construct(),32,"adam")
 	c.evaluate(str(sys.argv[1]), bool(sys.argv[2]))
