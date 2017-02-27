@@ -42,9 +42,9 @@ def construct():
 	conv_class = Convolution2D(256, 3, 3, activation='relu')(conv_class)
 
 	fcn_class = Flatten()(conv_class)
-	fcn_class = Dense(128)(fcn_class)
-	fcn_class = Dense(128)(fcn_class)
-	class_vec = Dense(8,name="class")(fcn_class)
+	fcn_class = Dense(128, activation='relu')(fcn_class)
+	fcn_class = Dense(128, activation='relu')(fcn_class)
+	class_vec = Dense(8, activation='softmax', name="class")(fcn_class)
 
 	return Model(input=imgs,output=[pred_mat,class_vec])
 
