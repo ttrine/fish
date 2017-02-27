@@ -36,7 +36,7 @@ def construct():
 	conv_coverage = MaxPooling2D(pool_size=(2, 2))(conv_coverage)
 
 	# Shave off channel dimension
-	pred_mat = Reshape((16,28))(conv_coverage)
+	pred_mat = Reshape((16,28),name="coverage")(conv_coverage)
 
 	conv_class = ZeroPadding2D((1, 1))(conv5)
 	conv_class = Convolution2D(256, 3, 3, activation='relu')(conv_class)
@@ -44,7 +44,7 @@ def construct():
 	fcn_class = Flatten()(conv_class)
 	fcn_class = Dense(128)(fcn_class)
 	fcn_class = Dense(128)(fcn_class)
-	class_vec = Dense(8)(fcn_class)
+	class_vec = Dense(8,name="class")(fcn_class)
 
 	return Model(input=imgs,output=[pred_mat,class_vec])
 
