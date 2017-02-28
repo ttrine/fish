@@ -32,10 +32,10 @@ def construct():
 	conv4 = Dropout(.5)(conv4)
 
 	conv5 = ZeroPadding2D((1, 1))(conv4)
-	conv5 = Convolution2D(512, 3, 3, activation='relu')(conv5)
+	conv5 = Convolution2D(256, 3, 3, activation='relu')(conv5)
 	
 	conv_gate = ZeroPadding2D((1, 1))(conv5)
-	conv_gate = Convolution2D(512, 3, 3, activation='sigmoid')(conv_gate)
+	conv_gate = Convolution2D(256, 3, 3, activation='sigmoid')(conv_gate)
 	conv_gate = Dropout(.5)(conv_gate)
 
 	conv_coverage = ZeroPadding2D((1, 1))(conv_gate)
@@ -48,7 +48,7 @@ def construct():
 	gated_feats = merge([conv_gate, conv5], mode='mul')
 
 	conv_class1 = ZeroPadding2D((1, 1))(gated_feats)
-	conv_class1 = Convolution2D(512, 3, 3, activation='relu')(conv_class1)
+	conv_class1 = Convolution2D(256, 3, 3, activation='relu')(conv_class1)
 	conv_class1 = MaxPooling2D(pool_size=(2, 2))(conv_class1)
 	conv_class1 = Dropout(.5)(conv_class1)
 
