@@ -61,9 +61,8 @@ class GradientReversalLayer(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 class SpecialBatchNormalization(Layer):
-    # Normalizes nonblack elements of the input only.
-    ## Designed for use as input to the first layer of a model
-    ## whose images are of varying size and placed in a padded tensor.
+    # Implements sample-wise normalization based only on the nonzero elements of x.
+    ## Intended only for an input layer which contains padded images.
     def __init__(self, epsilon=1e-5, mode=0, axis=-1, momentum=0.99,
                  weights=None, beta_init='zero', gamma_init='one',
                  gamma_regularizer=None, beta_regularizer=None, **kwargs):
@@ -111,35 +110,15 @@ class SpecialBatchNormalization(Layer):
         self.called_with = None
 
     def call(self, x, mask=None):
-        assert self.built, 'Layer must be built before being called'
-        input_shape = self.input_spec[0].shape
+        x_nonempty = x[x.nonzero()]
+        m = K.mean(x_nonempty, axis=-1, keepdims=True)
+        std = K.sqrt(K.var(x_nonempty, axis=-1, keepdims=True) + self.epsilon)
+        x_normed = (x_nonempty - m) / (std + self.epsilon)
+        x_normed = self.gamma * x_normed + self.beta
 
-        reduction_axes = [0]
-        broadcast_shape = [1] * (len(input_shape) - 1)
-        broadcast_shape[self.axis] = input_shape[self.axis]
+        x_normed = T.set_subtensor(x[x.nonzero()], x_normed)
 
-        self.called_with = x
-
-        # Remove padded elements before computing statistics
-        x_nonempty = x.nonzero_values()
-
-        x_normed, mean, std = K.normalize_batch_in_training(
-            x_nonempty, self.gamma, self.beta, reduction_axes,
-            epsilon=self.epsilon)
-
-        self.updates = [K.moving_average_update(self.running_mean, mean, self.momentum),
-                        K.moving_average_update(self.running_std, std, self.momentum)]
-
-        x_normed_running = K.batch_normalization(
-            x_nonempty, self.running_mean, self.running_std,
-            self.beta, self.gamma,
-            epsilon=self.epsilon)
-
-        # pick the normalized form of x corresponding to the training phase
-        x_normed = K.in_train_phase(x_normed, x_normed_running)
-        x_normed_masked = T.set_subtensor(x[x.nonzero()], x_normed)
-
-        return x_normed_masked
+        return x_normed
 
     def get_config(self):
         config = {"epsilon": self.epsilon,

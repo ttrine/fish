@@ -7,4 +7,4 @@ source /scratch/ttrine/fish/venv/bin/activate
 PYTHONPATH=/scratch/ttrine/fish/venv/lib/python2.7/site-packages:$PYTHONPATH
 export PYTHONPATH
 export THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32,exception_verbosity=high
-python -m experiments.special_bn_test.train 10000 32 2048
+python -m experiments.special_bn_test.train 10000 64 2048
