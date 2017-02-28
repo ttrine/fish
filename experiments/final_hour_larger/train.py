@@ -62,12 +62,12 @@ def construct():
 	conv_class2 = MaxPooling2D(pool_size=(2, 2))(conv_class2)
 
 	conv_class3 = ZeroPadding2D((1, 1))(conv_class2)
-	conv_class3 = Convolution2D(512, 3, 3, activation='relu', name="class_3")(conv_class3)
+	conv_class3 = Convolution2D(256, 3, 3, activation='relu', name="class_3")(conv_class3)
 	conv_class3 = MaxPooling2D(pool_size=(2, 2))(conv_class3)
 	conv_class3 = Dropout(.5)(conv_class3)
 
 	conv_class4 = ZeroPadding2D((1, 1))(conv_class3)
-	conv_class4 = Convolution2D(512, 3, 3, activation='relu', name="class_4")(conv_class4)
+	conv_class4 = Convolution2D(256, 3, 3, activation='relu', name="class_4")(conv_class4)
 	conv_class4 = MaxPooling2D(pool_size=(2, 2))(conv_class4)
 
 	fcn_class = Flatten()(conv_class4)
