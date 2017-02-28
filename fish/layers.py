@@ -110,11 +110,13 @@ class SpecialBatchNormalization(Layer):
         self.called_with = None
 
     def call(self, x, mask=None):
-
-        m = K.mean(x, axis=-1, keepdims=True)
-        std = K.sqrt(K.var(x, axis=-1, keepdims=True) + self.epsilon)
-        x_normed = (x - m) / (std + self.epsilon)
+        x_nonempty = x[x.nonzero()]
+        m = K.mean(x_nonempty, axis=-1, keepdims=True)
+        std = K.sqrt(K.var(x_nonempty, axis=-1, keepdims=True) + self.epsilon)
+        x_normed = (x_nonempty - m) / (std + self.epsilon)
         x_normed = self.gamma * x_normed + self.beta
+
+        x_normed = T.set_subtensor(x[x.nonzero()], x_normed)
 
         return x_normed
 
@@ -125,7 +127,7 @@ class SpecialBatchNormalization(Layer):
                   "gamma_regularizer": self.gamma_regularizer.get_config() if self.gamma_regularizer else None,
                   "beta_regularizer": self.beta_regularizer.get_config() if self.beta_regularizer else None,
                   "momentum": self.momentum}
-        base_config = super(SequenceBatchNormalization, self).get_config()
+        base_config = super(SpecialBatchNormalization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
