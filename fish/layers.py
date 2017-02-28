@@ -116,8 +116,7 @@ class SpecialBatchNormalization(Layer):
         x_normed = (x_nonempty - m) / (std + self.epsilon)
         x_normed = T.set_subtensor(x[x.nonzero()], x_normed)
         x_normed = self.gamma * x_normed + self.beta
-
-
+        
         return x_normed
 
     def get_config(self):
