@@ -16,7 +16,7 @@ def construct():
 	# 		common to detection and classification.
 
 	conv1 = ZeroPadding2D((3, 3))(batch)
-	conv1 = Convolution2D(16, 5, 5, activation='relu', name="stem_1")(conv1)
+	conv1 = Convolution2D(32, 5, 5, activation='relu', name="stem_1")(conv1)
 	conv1 = MaxPooling2D(pool_size=(2, 2))(conv1)
 
 	conv2 = ZeroPadding2D((3, 3))(conv1)
@@ -25,21 +25,21 @@ def construct():
 	conv2 = Dropout(.5)(conv2)
 
 	conv3 = ZeroPadding2D((3, 3))(conv2)
-	conv3 = Convolution2D(64, 5, 5, activation='relu', name="stem_3")(conv3)
+	conv3 = Convolution2D(128, 5, 5, activation='relu', name="stem_3")(conv3)
 	conv3 = MaxPooling2D(pool_size=(2, 2))(conv3)
 
 	conv4 = ZeroPadding2D((3, 3))(conv3)
-	conv4 = Convolution2D(256, 5, 5, activation='relu', name="stem_4")(conv4)
+	conv4 = Convolution2D(128, 5, 5, activation='relu', name="stem_4")(conv4)
 	conv4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 	conv4 = Dropout(.5)(conv4)
 
 	conv5 = ZeroPadding2D((1, 1))(conv4)
-	conv5 = Convolution2D(256, 3, 3, activation='relu', name="stem_5")(conv5)
+	conv5 = Convolution2D(128, 3, 3, activation='relu', name="stem_5")(conv5)
 	
 	# Gate. Modulates information available to classifier. 
 	# 		Loss defined in part by detector.
 	conv_gate = ZeroPadding2D((1, 1))(conv5)
-	conv_gate = Convolution2D(256, 3, 3, activation='sigmoid', name="gate_1")(conv_gate)
+	conv_gate = Convolution2D(128, 3, 3, activation='sigmoid', name="gate_1")(conv_gate)
 	conv_gate = Dropout(.5)(conv_gate)
 
 	gated_feats = merge([conv_gate, conv5], mode='mul')
@@ -62,12 +62,12 @@ def construct():
 	conv_class2 = MaxPooling2D(pool_size=(2, 2))(conv_class2)
 
 	conv_class3 = ZeroPadding2D((1, 1))(conv_class2)
-	conv_class3 = Convolution2D(256, 3, 3, activation='relu', name="class_3")(conv_class3)
+	conv_class3 = Convolution2D(512, 3, 3, activation='relu', name="class_3")(conv_class3)
 	conv_class3 = MaxPooling2D(pool_size=(2, 2))(conv_class3)
 	conv_class3 = Dropout(.5)(conv_class3)
 
 	conv_class4 = ZeroPadding2D((1, 1))(conv_class3)
-	conv_class4 = Convolution2D(256, 3, 3, activation='relu', name="class_4")(conv_class4)
+	conv_class4 = Convolution2D(512, 3, 3, activation='relu', name="class_4")(conv_class4)
 	conv_class4 = MaxPooling2D(pool_size=(2, 2))(conv_class4)
 
 	fcn_class = Flatten()(conv_class4)
