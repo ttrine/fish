@@ -110,13 +110,11 @@ class SpecialBatchNormalization(Layer):
         self.called_with = None
 
     def call(self, x, mask=None):
-        x_nonempty = x[x.nonzero()]
+        x_nonempty = x[x.nonzero_values()]
         m = K.mean(x_nonempty, axis=-1, keepdims=True)
         std = K.sqrt(K.var(x_nonempty, axis=-1, keepdims=True) + self.epsilon)
         x_normed = (x_nonempty - m) / (std + self.epsilon)
         x_normed = self.gamma * x_normed + self.beta
-
-        x_normed = T.set_subtensor(x[x.nonzero()], x_normed)
 
         return x_normed
 
