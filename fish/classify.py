@@ -13,14 +13,14 @@ from keras.preprocessing.image import ImageDataGenerator
 from fish.chunk import chunk_mask, chunk_image
 
 class ClassifierContainer:
-	def __init__(self,name,model,n,optimizer,datagen_args=dict(),callbacks=[]):
+	def __init__(self,name,model,n,optimizer,datagen_args=dict(),loss_weights=[1.,1.],callbacks=[]):
 		# Set instance variables
 		self.name = name
 		self.n = n
 		self.datagen_args = datagen_args
 
 		# Compile model
-		model.compile(optimizer=optimizer, loss=["binary_crossentropy","categorical_crossentropy"])
+		model.compile(optimizer=optimizer, loss=["binary_crossentropy","categorical_crossentropy"], loss_weights=loss_weights)
 
 		self.model = model
 		

@@ -1,10 +1,27 @@
 import theano
 
+from keras.callbacks import Callback
+
 from keras.engine import Layer, InputSpec
 from keras import initializations, regularizers
 from keras import backend as K
 
 import theano.tensor as T
+
+# Callback that decays loss weight according to a paramaterized logistic function
+class LogisticLossDecay(Callback):
+    def __init__(self, loss_weight, L, k, x0, s):
+        self.loss_weight = loss_weight
+        self.x = 1
+        self.L = L
+        self.k = k
+        self.x0 = x0
+        self.s = s
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.model.loss_weights[0] = self.L / (1 + math.exp(-self.k*(self.x-self.x0))) + self.s
+        self.x += 1
+        print " coverage loss weight: " + str(self.model.loss_weights[0])
 
 class ReverseGradient(theano.Op):
     """ theano operation to reverse the gradients
@@ -128,7 +145,6 @@ class SpecialBatchNormalization(Layer):
                   "momentum": self.momentum}
         base_config = super(SpecialBatchNormalization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
-
 
 class SequenceBatchNormalization(Layer):
     # Implements sequence-wise normalization of feature maps. 
