@@ -1,3 +1,5 @@
+import numpy as np
+
 from keras import backend as K
 from keras.models import Model
 
@@ -6,6 +8,8 @@ from keras.layers.core import Masking, RepeatVector
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
 
+from keras.callbacks import Callback
+
 from keras.regularizers import WeightRegularizer
 from keras.constraints import nonneg
 
@@ -13,7 +17,17 @@ from fish.layers import SpecialBatchNormalization
 from fish.classify import ClassifierContainer
 
 # Set up infrastructure for eliminating nonfish features.
-fish_feats = K.ones(256)
+fish_feats = K.ones((64,16,28,256))
+
+class UpdateFeatureMask(Callback):
+    def __init__(self, fish_feats):
+    	self.fish_feats = fish_feats
+
+    def on_batch_begin(self, index, logs={}):
+    	filter_weights = np.array(self.model.layers[-4].weights[0].eval())
+    	is_fish_feat = (filter_weights > 0).astype(np.float32).reshape(1,1,1,256)
+    	is_fish_repeat = np.repeat(np.repeat(np.repeat(is_fish_feat,logs['size'],0),16,1),28,2)
+    	K.set_value(self.fish_feats, is_fish_repeat)
 
 def construct():
 	imgs = Input(shape=(487, 866, 3))
@@ -80,5 +94,7 @@ if __name__ == '__main__':
 		print "Usage: train nb_epoch batch_size samples_per_epoch"
 		sys.exit()
 
-	model = ClassifierContainer(name,construct(),32,"adam")
+	mask_update = UpdateFeatureMask(fish_feats)
+
+	model = ClassifierContainer(name,construct(),32,"adam", callbacks=[mask_update])
 	model.train(nb_epoch=int(sys.argv[1]), batch_size=int(sys.argv[2]), samples_per_epoch=int(sys.argv[3]))
