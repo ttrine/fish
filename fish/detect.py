@@ -90,23 +90,3 @@ class DetectorContainer:
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
 			validation_data=(self.X_test,self.y_test_coverage), verbose=1, callbacks=self.callbacks)
-
-	''' TODO. Predict class for each image. '''
-	def evaluate(self,weight_file,clip=False):
-		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
-
-		print "Running inference..."
-
-		predictions = self.model.predict(self.X_eval, verbose=True)[1]
-
-		if clip:
-			predictions = np.clip(predictions,0.02, 0.98, out=None)
-
-		f = file('experiments/'+self.name+'/submission.csv','wb')
-		w = csv.writer(f)
-		w.writerow(['image','ALB','BET','DOL','LAG','NoF','OTHER','SHARK','YFT'])
-		rows = [[filename] for filename in self.filenames_eval]
-		[rows[i].extend(list(predictions[i])) for i in range(1000)]
-		w.writerows(rows)
-		f.close()
-		print "Done. Wrote experiments/"+self.name+"/submission.csv."
