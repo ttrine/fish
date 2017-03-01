@@ -33,7 +33,7 @@ def construct():
 	conv5 = ZeroPadding2D((1, 1))(conv4)
 	conv5 = Convolution2D(256, 3, 3, activation='relu')(conv5)
 
-	conv5 = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01))(conv5)
+	conv5 = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01,l2=.01))(conv5)
 
 	# Shave off channel dimension
 	pred_mat = Reshape((16,28))(conv5)
