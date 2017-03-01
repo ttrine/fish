@@ -6,6 +6,7 @@ from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
 
 from keras.regularizers import WeightRegularizer
+from keras.constraints import nonneg
 
 from fish.detect import DetectorContainer
 
@@ -33,7 +34,7 @@ def construct():
 	conv5 = ZeroPadding2D((1, 1))(conv4)
 	conv5 = Convolution2D(256, 3, 3, activation='relu')(conv5)
 
-	conv5 = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01,l2=.01))(conv5)
+	conv5 = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01,l2=.01), W_constraint=nonneg())(conv5)
 
 	# Shave off channel dimension
 	pred_mat = Reshape((16,28))(conv5)
