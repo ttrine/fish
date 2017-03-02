@@ -1,7 +1,7 @@
 import numpy as np
 
 from fish.classify import ClassifierContainer
-from .train import *
+from experiments.feature_thresh.train import *
 
 if __name__ == '__main__':
 	import sys # basic arg parsing, infer name
