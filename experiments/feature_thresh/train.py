@@ -17,17 +17,21 @@ from fish.layers import SpecialBatchNormalization
 from fish.classify import ClassifierContainer
 
 # Set up infrastructure for eliminating nonfish features.
-fish_feats = K.ones((20,16,28,256))
+fish_feats = K.ones(256)
 
 class UpdateFeatureMask(Callback):
     def __init__(self, fish_feats):
     	self.fish_feats = fish_feats
 
     def on_batch_begin(self, index, logs={}):
-    	filter_weights = np.array(self.model.layers[-4].weights[0].eval())
-    	is_fish_feat = (filter_weights > 0).astype(np.float32).reshape(1,1,1,256)
-    	is_fish_repeat = np.repeat(np.repeat(np.repeat(is_fish_feat,logs['size'],0),16,1),28,2)
-    	K.set_value(self.fish_feats, is_fish_repeat)
+    	filter_weights = np.array(self.model.layers[-4].weights[0].eval()).reshape(256)
+    	fish_feats = (filter_weights > 0).astype(np.float32)
+    	K.set_value(self.fish_feats, fish_feats)
+
+def fishy_features(x):
+		embedded = fish_feats.reshape((1,1,1,256))
+		fish_repeat = np.repeat(np.repeat(np.repeat(embedded,x.shape[0],0),16,1),28,2)
+		return x * fish_repeat
 
 def construct():
 	imgs = Input(shape=(487, 866, 3))
@@ -60,7 +64,7 @@ def construct():
 	pred_mat = Reshape((16,28),name="coverage")(conv_coverage)
 
 	# Classifier. Infers fish type.
-	selected_feats = Lambda(lambda x: fish_feats * x)(conv5)
+	selected_feats = Lambda(fishy_features)(conv5)
 
 	conv_class1 = ZeroPadding2D((1, 1))(selected_feats)
 	conv_class1 = Convolution2D(256, 3, 3, activation='relu', name="class_1")(conv_class1)
