@@ -17,7 +17,7 @@ from fish.layers import SpecialBatchNormalization
 from fish.classify import ClassifierContainer
 
 # Set up infrastructure for eliminating nonfish features.
-fish_feats = K.ones((64,16,28,256))
+fish_feats = K.ones((32,16,28,256))
 
 class UpdateFeatureMask(Callback):
     def __init__(self, fish_feats):
