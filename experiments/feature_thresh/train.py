@@ -65,6 +65,7 @@ def construct():
 
 	# Classifier. Infers fish type.
 	selected_feats = Lambda(fishy_features)(conv5)
+	selected_feats = Lambda(lambda x: K.print_tensor(x))(selected_feats)
 
 	conv_class1 = ZeroPadding2D((1, 1))(selected_feats)
 	conv_class1 = Convolution2D(256, 3, 3, activation='relu', name="class_1")(conv_class1)
