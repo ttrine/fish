@@ -1,3 +1,7 @@
+import sys
+sys.setrecursionlimit(10000)
+
+
 import numpy as np
 
 from keras import backend as K
