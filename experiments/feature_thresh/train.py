@@ -56,7 +56,7 @@ def construct():
 	
 	# Detector. Approximates image's coverage matrix. We use weights from this layer 
 	##			to restrict the classifier input to only features related to fish.
-	conv_coverage = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01,l2=.01), W_constraint=nonneg())(conv5)
+	conv_coverage = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=WeightRegularizer(l1=.01,l2=.01))(conv5)
 	pred_mat = Reshape((16,28),name="coverage")(conv_coverage)
 
 	# Classifier. Infers fish type.
