@@ -12,7 +12,7 @@ if __name__ == '__main__':
 		sys.exit()
 	
 	c = ClassifierContainer(name,construct(),32,"adam")
-	c.model.load_weights('experiments/'+name'+/weights/'+str(sys.argv[1]))
+	c.model.load_weights('experiments/'+name+'/weights/'+str(sys.argv[1]))
 
 	# Load the fish feature mask. Just derive from the last set of weights.
 	filter_weights = np.array(c.model.layers[-4].weights[0].eval()).reshape(256)
