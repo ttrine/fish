@@ -33,6 +33,11 @@ def fishy_features(x):
 		fish_repeat = np.repeat(np.repeat(np.repeat(embedded,x.shape[0],0),16,1),28,2)
 		return x * fish_repeat
 
+
+def print_max(x):
+	K.print_tensor(K.max(x))
+	return x
+
 def construct():
 	imgs = Input(shape=(487, 866, 3))
 	batch = SpecialBatchNormalization()(imgs)
@@ -65,7 +70,7 @@ def construct():
 
 	# Classifier. Infers fish type.
 	selected_feats = Lambda(fishy_features)(conv5)
-	selected_feats = Lambda(lambda x: print sum(x))(selected_feats)
+	selected_feats = Lambda(print_max)(selected_feats)
 
 	conv_class1 = ZeroPadding2D((1, 1))(selected_feats)
 	conv_class1 = Convolution2D(256, 3, 3, activation='relu', name="class_1")(conv_class1)
