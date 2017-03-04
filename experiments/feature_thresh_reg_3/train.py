@@ -30,7 +30,7 @@ def fishy_features(x, tied_to):
 def reg_conv(name, x, k, n, p, pad=True, bn=False, pool=2):
 	if pad: x = ZeroPadding2D((n-2, n-2))(x)
 	x = Convolution2D(k, n, n, name=name, W_regularizer=l2())(x)
-	x = BatchNormalization()(x)
+	if bn: x = BatchNormalization()(x)
 	x = Activation('relu')(x)
 	x = SpatialDropout2D(p)(x)
 	if pool: x = MaxPooling2D(pool_size=(pool, pool))(x)
@@ -43,11 +43,11 @@ def construct():
 
 	# Root. Shared CNN for learning representations 
 	# 		common to detection and classification.
-	stem_1 = reg_conv("stem_1", batch, 16, 5, .3)
-	stem_2 = reg_conv("stem_2", stem_1, 32, 5, .3, bn=True)
-	stem_3 = reg_conv("stem_3", stem_2, 64, 5, .4)
-	stem_4 = reg_conv("stem_4", stem_3, 128, 5, .4, bn=True, pool=4)
-	stem_5 = reg_conv("stem_5", stem_4, 256, 3, .5, bn=True, pool=False)
+	stem_1 = reg_conv("stem_1", batch, 32, 5, .25)
+	stem_2 = reg_conv("stem_2", stem_1, 64, 5, .25, pool=4)
+	stem_3 = reg_conv("stem_3", stem_2, 64, 5, .25, bn=True)
+	stem_4 = reg_conv("stem_4", stem_3, 128, 5, .3)
+	stem_5 = reg_conv("stem_5", stem_4, 256, 3, .4, bn=True, pool=False)
 
 	# Detector. Approximates image's coverage matrix. We use weights from this layer 
 	##			to restrict the classifier input to only features related to fish.
