@@ -27,12 +27,11 @@ def fishy_features(x, tied_to):
 
 # Utility function to apply padding, convolution, bn, relu,
 	# spatial dropout, and max pooling respectively.
-def reg_conv(name, x, k, n, p, pad=True, pool=2):
+def reg_conv(name, x, k, n, p, pad=True, bn=False, pool=2):
 	if pad: x = ZeroPadding2D((n-2, n-2))(x)
 	x = Convolution2D(k, n, n, name=name, W_regularizer=l2())(x)
-	x = BatchNormalization()(x)
+	if bn: x = BatchNormalization()(x)
 	x = Activation('relu')(x)
-	x = SpatialDropout2D(p)(x)
 	if pool: x = MaxPooling2D(pool_size=(pool, pool))(x)
 
 	return x
@@ -43,11 +42,11 @@ def construct():
 
 	# Root. Shared CNN for learning representations 
 	# 		common to detection and classification.
-	stem_1 = reg_conv("stem_1", batch, 16, 5, .4)
-	stem_2 = reg_conv("stem_2", stem_1, 32, 5, .4)
-	stem_3 = reg_conv("stem_3", stem_2, 64, 5, .4)
-	stem_4 = reg_conv("stem_4", stem_3, 128, 5, .4, pool=4)
-	stem_5 = reg_conv("stem_5", stem_4, 256, 3, .4, pool=False)
+	stem_1 = reg_conv("stem_1", batch, 32, 5, .25)
+	stem_2 = reg_conv("stem_2", stem_1, 64, 5, .25, pool=4)
+	stem_3 = reg_conv("stem_3", stem_2, 64, 5, .25, bn=True)
+	stem_4 = reg_conv("stem_4", stem_3, 128, 5, .3)
+	stem_5 = reg_conv("stem_5", stem_4, 256, 3, .4, bn=True, pool=False)
 
 	# Detector. Approximates image's coverage matrix. We use weights from this layer 
 	##			to restrict the classifier input to only features related to fish.
@@ -59,15 +58,14 @@ def construct():
 	fishy_feats = Lambda(fishy_features, arguments={'tied_to': conv_coverage})(stem_5)
 	fishy_feats = Activation('relu')(fishy_feats)
 
-	class_1 = reg_conv("class_1", fishy_feats, 256, 3, .4)
+	class_1 = reg_conv("class_1", fishy_feats, 256, 3, .4, bn=True)
 	class_2 = reg_conv("class_2", class_1, 256, 3, .4)
-	class_3 = reg_conv("class_3", class_2, 256, 3, .4)
+	class_3 = reg_conv("class_3", class_2, 256, 3, .4, bn=True)
 	class_4 = reg_conv("class_4", class_3, 256, 3, .4)
 	
 	fcn = Flatten()(class_4)
 
 	dense_1 = Dense(256, name="dense_1")(fcn)
-	dense_1 = BatchNormalization(mode=1)(dense_1)
 	dense_1 = Activation('relu')(dense_1)
 	dense_1 = Dropout(.5)(dense_1)
 
