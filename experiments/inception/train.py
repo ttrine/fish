@@ -123,7 +123,7 @@ def stem(x):
 	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
 	x = factor_5x5(x,80,48,80,64,96)
 	x = pool_5x5(x,128,96,128,128,192,64)
-	x = factor_7x7(x,160,96,160,128,192)
+	# x = factor_7x7(x,160,96,160,128,192)
 
 	return x
 
@@ -142,10 +142,10 @@ def construct():
 	fishy_feats = Lambda(fishy_features, arguments={'tied_to': conv_coverage})(x)
 	fishy_feats = Activation('relu')(fishy_feats)
 
-	class_1 = pool_7x7(fishy_feats,256,192,256,256,384,128)
-	class_2 = pool_7x7(class_1,256,192,256,256,384,128)
-	class_3 = pool_7x7(class_2,256,192,256,256,384,128)
-	class_4 = pool_7x7(class_3,256,192,256,256,384,128)
+	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
+	class_2 = pool_5x5(class_1,64,48,64,64,96,32)
+	class_3 = pool_5x5(class_2,64,48,64,64,96,32)
+	class_4 = pool_5x5(class_3,64,48,64,64,96,32)
 	
 	fcn = Flatten()(class_4)
 
