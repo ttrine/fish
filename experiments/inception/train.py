@@ -27,46 +27,85 @@ def fishy_features(x, tied_to):
 
 # Inception module where each 5x5 convolution is 
 	# instead factored into two 3x3 convolutions.
-def inception_factor_5x5(x):
-	branch1x1 = Convolution2D(64, 1, 1, border_mode='same', activation='relu')(x)
+def factor_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl):
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, border_mode='same', activation='relu')(x)
 
-	branch3x3 = Convolution2D(48, 1, 1, border_mode='same', activation='relu')(x)
-	branch3x3 = Convolution2D(64, 3, 3, border_mode='same', activation='relu')(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch3x3 = Convolution2D(nb_3x3, 3, 3, border_mode='same', activation='relu')(branch3x3)
 
-	branch3x3dbl = Convolution2D(64, 1, 1, border_mode='same', activation='relu')(x)
-	branch3x3dbl = Convolution2D(96, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
-	branch3x3dbl = Convolution2D(96, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
 
 	x = merge([branch1x1, branch3x3, branch3x3dbl], mode='concat')
 
 	return x
 
-# Same as inception_factor_5x5, but also pools the output 
+# Same as factor_5x5, but also pools the output 
 	# to half the size.
-def inception_pool(x):
+def pool_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl,nb_pool):
 	branch1x1 = ZeroPadding2D((0,1))(x)
-	branch1x1 = Convolution2D(64, 1, 1, subsample=(2,2), border_mode='same', activation='relu')(branch1x1)
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, subsample=(2,2), border_mode='same', activation='relu')(branch1x1)
 
 	branch3x3 = ZeroPadding2D((0,1))(x)
-	branch3x3 = Convolution2D(48, 1, 1, border_mode='same', activation='relu')(branch3x3)
-	branch3x3 = Convolution2D(64, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu')(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3)
 
 	branch3x3dbl = ZeroPadding2D((0,1))(x)
-	branch3x3dbl = Convolution2D(64, 1, 1, border_mode='same', activation='relu')(branch3x3dbl)
-	branch3x3dbl = Convolution2D(96, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
-	branch3x3dbl = Convolution2D(96, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3dbl)
 
 	branch_pool = ZeroPadding2D((0,1))(x)
 	branch_pool = AveragePooling2D((3, 3), 
 					strides=(2,2), border_mode='same')(branch_pool)
-	branch_pool = Convolution2D(32, 1, 1)(branch_pool)
+	branch_pool = Convolution2D(nb_pool, 1, 1)(branch_pool)
 
 	x = merge([branch1x1, branch3x3, branch3x3dbl, branch_pool], mode='concat')
 
 	return x
 
-# Utility function to apply bn, relu, spatial dropout,
-	# and/or max pooling to a linear convolutional output.
+# Inception module where each 7x7 convolution is factored.
+def factor_7x7(x,nb_1x1,nb_7x7_reduce,nb_7x7,nb_7x7dbl_reduce,nb_7x7dbl):
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, border_mode='same', activation='relu')(x)
+
+	branch7x7 = Convolution2D(nb_7x7_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch7x7 = Convolution2D(nb_7x7, 1, 7, border_mode='same', activation='relu')(branch7x7)
+	branch7x7 = Convolution2D(nb_7x7, 7, 1, border_mode='same', activation='relu')(branch7x7)
+
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
+
+	x = merge([branch1x1, branch7x7, branch7x7dbl], mode='concat')
+
+	return x
+
+# Inception module where each 7x7 convolution is factored.
+def pool_7x7(x,nb_1x1,nb_7x7_reduce,nb_7x7,nb_7x7dbl_reduce,nb_7x7dbl, nb_pool):
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, subsample=(2,2), border_mode='same', activation='relu')(x)
+
+	branch7x7 = Convolution2D(nb_7x7_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch7x7 = Convolution2D(nb_7x7, 1, 7, border_mode='same', activation='relu')(branch7x7)
+	branch7x7 = Convolution2D(nb_7x7, 7, 1, subsample=(2,2), border_mode='same', activation='relu')(branch7x7)
+
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
+	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, subsample=(2,2), border_mode='same', activation='relu')(branch7x7dbl)
+
+	branch_pool = AveragePooling2D((3, 3), 
+					strides=(2,2), border_mode='same')(x)
+	branch_pool = Convolution2D(nb_pool, 1, 1)(branch_pool)
+
+	x = merge([branch1x1, branch7x7, branch7x7dbl, branch_pool], mode='concat')
+
+	return x
+
+# Utility function to apply uniform regularization.
 def regularize(name, x, k, n, p, pad=True, pool=2):
 	x = SpatialDropout2D(p)(x)
 	if pool: x = MaxPooling2D(pool_size=(pool, pool))(x)
@@ -82,8 +121,9 @@ def stem(x):
 	x = MaxPooling2D((3,3), strides=(2,2))(x)
 	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
 	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
-	x = inception_factor_5x5(x)
-	x = inception_pool(x)
+	x = factor_5x5(x,80,48,80,64,96)
+	x = pool_5x5(x,128,96,128,128,192,64)
+	x = factor_7x7(x,160,96,160,128,192)
 
 	return x
 
@@ -102,10 +142,10 @@ def construct():
 	fishy_feats = Lambda(fishy_features, arguments={'tied_to': conv_coverage})(x)
 	fishy_feats = Activation('relu')(fishy_feats)
 
-	class_1 = inception_pool(fishy_feats)
-	class_2 = inception_pool(class_1)
-	class_3 = inception_pool(class_2)
-	class_4 = inception_pool(class_3)
+	class_1 = pool_7x7(fishy_feats,256,192,256,256,384,128)
+	class_2 = pool_7x7(class_1,256,192,256,256,384,128)
+	class_3 = pool_7x7(class_2,256,192,256,256,384,128)
+	class_4 = pool_7x7(class_3,256,192,256,256,384,128)
 	
 	fcn = Flatten()(class_4)
 
