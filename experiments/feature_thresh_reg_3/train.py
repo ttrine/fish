@@ -32,7 +32,7 @@ def reg_conv(name, x, k, n, p, pad=True, bn=False, pool=2):
 	x = Convolution2D(k, n, n, name=name, W_regularizer=l2())(x)
 	if bn: x = BatchNormalization()(x)
 	x = Activation('relu')(x)
-	x = SpatialDropout2D(p)(x)
+	if p: x = SpatialDropout2D(p)(x)
 	if pool: x = MaxPooling2D(pool_size=(pool, pool))(x)
 
 	return x
@@ -47,7 +47,7 @@ def construct():
 	stem_2 = reg_conv("stem_2", stem_1, 64, 5, .25, pool=4)
 	stem_3 = reg_conv("stem_3", stem_2, 64, 5, .25, bn=True)
 	stem_4 = reg_conv("stem_4", stem_3, 128, 5, .3)
-	stem_5 = reg_conv("stem_5", stem_4, 256, 3, .4, bn=True, pool=False)
+	stem_5 = reg_conv("stem_5", stem_4, 256, 3, None, bn=True, pool=False)
 
 	# Detector. Approximates image's coverage matrix. We use weights from this layer 
 	##			to restrict the classifier input to only features related to fish.
@@ -67,13 +67,9 @@ def construct():
 	fcn = Flatten()(class_4)
 
 	dense_1 = Dense(256, name="dense_1")(fcn)
-	dense_1 = Activation('relu')(dense_1)
 	dense_1 = Dropout(.5)(dense_1)
 
 	dense_2 = Dense(256, name="dense_2")(dense_1)
-	dense_2 = BatchNormalization(mode=1)(dense_2)
-	dense_2 = Activation('relu')(dense_2)
-	dense_2 = Dropout(.5)(dense_2)
 
 	class_vec = Dense(8, activation='softmax', name="class")(dense_2)
 

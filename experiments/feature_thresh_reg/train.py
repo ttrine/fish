@@ -66,13 +66,9 @@ def construct():
 	fcn = Flatten()(class_4)
 
 	dense_1 = Dense(256, name="dense_1")(fcn)
-	dense_1 = Activation('relu')(dense_1)
 	dense_1 = Dropout(.5)(dense_1)
 
 	dense_2 = Dense(256, name="dense_2")(dense_1)
-	dense_2 = BatchNormalization(mode=1)(dense_2)
-	dense_2 = Activation('relu')(dense_2)
-	dense_2 = Dropout(.5)(dense_2)
 
 	class_vec = Dense(8, activation='softmax', name="class")(dense_2)
 
