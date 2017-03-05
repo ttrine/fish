@@ -28,14 +28,14 @@ def fishy_features(x, tied_to):
 # Inception module where each 5x5 convolution is 
 	# instead factored into two 3x3 convolutions.
 def factor_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl):
-	branch1x1 = Convolution2D(nb_1x1, 1, 1, border_mode='same', activation='relu', W_regularizer=l2(.001))(x)
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, border_mode='same', activation='relu')(x)
 
-	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu', W_regularizer=l2(.001))(x)
-	branch3x3 = Convolution2D(nb_3x3, 3, 3, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch3x3 = Convolution2D(nb_3x3, 3, 3, border_mode='same', activation='relu')(branch3x3)
 
-	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu', W_regularizer=l2(.001))(x)
-	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3dbl)
-	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
 
 	x = merge([branch1x1, branch3x3, branch3x3dbl], mode='concat')
 
@@ -45,21 +45,21 @@ def factor_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl):
 	# to half the size.
 def pool_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl,nb_pool):
 	branch1x1 = ZeroPadding2D((0,1))(x)
-	branch1x1 = Convolution2D(nb_1x1, 1, 1, subsample=(2,2), border_mode='same', activation='relu', W_regularizer=l2(.001))(branch1x1)
+	branch1x1 = Convolution2D(nb_1x1, 1, 1, subsample=(2,2), border_mode='same', activation='relu')(branch1x1)
 
 	branch3x3 = ZeroPadding2D((0,1))(x)
-	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3)
-	branch3x3 = Convolution2D(nb_3x3, 3, 3, subsample=(2,2), border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3_reduce, 1, 1, border_mode='same', activation='relu')(branch3x3)
+	branch3x3 = Convolution2D(nb_3x3, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3)
 
 	branch3x3dbl = ZeroPadding2D((0,1))(x)
-	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3dbl)
-	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3dbl)
-	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, subsample=(2,2), border_mode='same', activation='relu', W_regularizer=l2(.001))(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl_reduce, 1, 1, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, border_mode='same', activation='relu')(branch3x3dbl)
+	branch3x3dbl = Convolution2D(nb_3x3dbl, 3, 3, subsample=(2,2), border_mode='same', activation='relu')(branch3x3dbl)
 
 	branch_pool = ZeroPadding2D((0,1))(x)
 	branch_pool = AveragePooling2D((3, 3), 
 					strides=(2,2), border_mode='same')(branch_pool)
-	branch_pool = Convolution2D(nb_pool, 1, 1, W_regularizer=l2(.001))(branch_pool)
+	branch_pool = Convolution2D(nb_pool, 1, 1)(branch_pool)
 
 	x = merge([branch1x1, branch3x3, branch3x3dbl, branch_pool], mode='concat')
 
@@ -69,11 +69,11 @@ def pool_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl,nb_pool):
 # 		common to detection and classification.
 def stem(x):
 	x = SpecialBatchNormalization()(x)
-	x = Convolution2D(16, 3, 3, subsample=(2,2), border_mode="same", activation="relu", W_regularizer=l2(.001))(x)
-	x = Convolution2D(32, 3, 3, border_mode="same", activation="relu", W_regularizer=l2(.001))(x)
+	x = Convolution2D(16, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
+	x = Convolution2D(32, 3, 3, border_mode="same", activation="relu")(x)
 	x = MaxPooling2D((3,3), strides=(2,2))(x)
-	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu", W_regularizer=l2(.001))(x)
-	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu", W_regularizer=l2(.001))(x)
+	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
+	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
 	x = BatchNormalization()(x)
 	x = factor_5x5(x,40,24,40,32,48)
 	x = SpatialDropout2D(.1)(x)
@@ -89,7 +89,7 @@ def construct():
 
 	# Detector. Approximates image's coverage matrix. We use weights from this layer 
 	##			to restrict the classifier input to only features related to fish.
-	conv_coverage = Convolution2D(1, 1, 1, activation='sigmoid', W_regularizer=l2(.001))
+	conv_coverage = Convolution2D(1, 1, 1, activation='sigmoid')
 	pred_mat = conv_coverage(x)
 	pred_mat = Reshape((16,28),name="coverage")(pred_mat)
 
@@ -98,20 +98,19 @@ def construct():
 	fishy_feats = Activation('relu')(fishy_feats)
 
 	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
-	class_1 = SpatialDropout2D(.1)(class_1)
+	class_1 = SpatialDropout2D(.2)(class_1)
 
 	class_2 = pool_5x5(class_1,85,64,85,64,128,43)
-	class_2 = SpatialDropout2D(.1)(class_2)
+	class_2 = SpatialDropout2D(.2)(class_2)
 
 	class_3 = pool_5x5(class_2,106,80,106,106,160,54)
-	class_3 = SpatialDropout2D(.1)(class_3)
+	class_3 = SpatialDropout2D(.2)(class_3)
 
 	class_4 = pool_5x5(class_3,128,96,128,128,192,64)
-	class_4 = SpatialDropout2D(.1)(class_4)
 
 	fcn = Flatten()(class_4)
 	fcn = Dropout(.5)(fcn)
-	fcn = Dense(128, W_regularizer=l2(.001))(fcn)
+	fcn = Dense(128)(fcn)
 
 	class_vec = Dense(8, activation='softmax', name="class")(fcn)
 
