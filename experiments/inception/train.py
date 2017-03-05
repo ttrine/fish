@@ -122,7 +122,7 @@ def stem(x):
 	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
 	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
 	x = factor_5x5(x,80,48,80,64,96)
-	x = pool_5x5(x,80,48,80,64,96)
+	x = pool_5x5(x,80,64,48,64,64,96,32)
 	x = factor_7x7(x,80,48,80,64,96)
 
 	return x
