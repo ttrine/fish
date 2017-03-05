@@ -65,46 +65,6 @@ def pool_5x5(x,nb_1x1,nb_3x3_reduce,nb_3x3,nb_3x3dbl_reduce,nb_3x3dbl,nb_pool):
 
 	return x
 
-# Inception module where each 7x7 convolution is factored.
-def factor_7x7(x,nb_1x1,nb_7x7_reduce,nb_7x7,nb_7x7dbl_reduce,nb_7x7dbl):
-	branch1x1 = Convolution2D(nb_1x1, 1, 1, border_mode='same', activation='relu')(x)
-
-	branch7x7 = Convolution2D(nb_7x7_reduce, 1, 1, border_mode='same', activation='relu')(x)
-	branch7x7 = Convolution2D(nb_7x7, 1, 7, border_mode='same', activation='relu')(branch7x7)
-	branch7x7 = Convolution2D(nb_7x7, 7, 1, border_mode='same', activation='relu')(branch7x7)
-
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
-
-	x = merge([branch1x1, branch7x7, branch7x7dbl], mode='concat')
-
-	return x
-
-# Inception module where each 7x7 convolution is factored.
-def pool_7x7(x,nb_1x1,nb_7x7_reduce,nb_7x7,nb_7x7dbl_reduce,nb_7x7dbl, nb_pool):
-	branch1x1 = Convolution2D(nb_1x1, 1, 1, subsample=(2,2), border_mode='same', activation='relu')(x)
-
-	branch7x7 = Convolution2D(nb_7x7_reduce, 1, 1, border_mode='same', activation='relu')(x)
-	branch7x7 = Convolution2D(nb_7x7, 1, 7, border_mode='same', activation='relu')(branch7x7)
-	branch7x7 = Convolution2D(nb_7x7, 7, 1, subsample=(2,2), border_mode='same', activation='relu')(branch7x7)
-
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 1, border_mode='same', activation='relu')(x)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 7, 1, border_mode='same', activation='relu')(branch7x7dbl)
-	branch7x7dbl = Convolution2D(nb_7x7dbl_reduce, 1, 7, subsample=(2,2), border_mode='same', activation='relu')(branch7x7dbl)
-
-	branch_pool = AveragePooling2D((3, 3), 
-					strides=(2,2), border_mode='same')(x)
-	branch_pool = Convolution2D(nb_pool, 1, 1)(branch_pool)
-
-	x = merge([branch1x1, branch7x7, branch7x7dbl, branch_pool], mode='concat')
-
-	return x
-
 # Utility function to apply uniform regularization.
 def regularize(name, x, k, n, p, pad=True, pool=2):
 	x = SpatialDropout2D(p)(x)
@@ -116,14 +76,16 @@ def regularize(name, x, k, n, p, pad=True, pool=2):
 # 		common to detection and classification.
 def stem(x):
 	x = SpecialBatchNormalization()(x)
-	x = Convolution2D(32, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
-	x = Convolution2D(64, 3, 3, border_mode="same", activation="relu")(x)
+	x = Convolution2D(16, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
+	x = Convolution2D(32, 3, 3, border_mode="same", activation="relu")(x)
 	x = MaxPooling2D((3,3), strides=(2,2))(x)
-	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
-	x = Convolution2D(128, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
-	x = factor_5x5(x,80,48,80,64,96)
+	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
+	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu")(x)
+	x = BatchNormalization()(x)
+	x = factor_5x5(x,40,24,40,32,48)
 	x = pool_5x5(x,64,48,64,64,96,32)
-	x = factor_7x7(x,80,48,80,64,96)
+	x = factor_5x5(x,80,48,80,64,96)
+	x = BatchNormalization()(x)
 
 	return x
 
@@ -141,6 +103,7 @@ def construct():
 	# Classifier. Infers fish type.
 	fishy_feats = Lambda(fishy_features, arguments={'tied_to': conv_coverage})(x)
 	fishy_feats = Activation('relu')(fishy_feats)
+	fishy_feats = BatchNormalization()(fishy_feats)
 
 	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
 	class_2 = pool_5x5(class_1,64,48,64,64,96,32)
