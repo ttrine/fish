@@ -85,7 +85,6 @@ def stem(x):
 	x = factor_5x5(x,40,24,40,32,48)
 	x = pool_5x5(x,64,48,64,64,96,32)
 	x = factor_5x5(x,80,48,80,64,96)
-	x = BatchNormalization()(x)
 
 	return x
 
@@ -103,18 +102,16 @@ def construct():
 	# Classifier. Infers fish type.
 	fishy_feats = Lambda(fishy_features, arguments={'tied_to': conv_coverage})(x)
 	fishy_feats = Activation('relu')(fishy_feats)
-	fishy_feats = BatchNormalization()(fishy_feats)
 
 	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
 	class_2 = pool_5x5(class_1,64,48,64,64,96,32)
 	class_3 = pool_5x5(class_2,64,48,64,64,96,32)
-	class_4 = pool_5x5(class_3,64,48,64,64,96,32)
+	class_4 = pool_5x5(class_3,128,96,128,128,192,64)
 	
 	fcn = Flatten()(class_4)
 
-	fcn = BatchNormalization(mode=1)(fcn)
 	fcn = Dropout(.5)(fcn)
-	fcn = Dense(256, activation='relu')(fcn)
+	fcn = Dense(128)(fcn)
 
 	class_vec = Dense(8, activation='softmax', name="class")(fcn)
 
