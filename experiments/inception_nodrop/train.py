@@ -76,9 +76,7 @@ def stem(x):
 	x = Convolution2D(64, 3, 3, subsample=(2,2), border_mode="same", activation="relu", W_regularizer=l2(.001))(x)
 	x = BatchNormalization()(x)
 	x = factor_5x5(x,40,24,40,32,48)
-	x = SpatialDropout2D(.1)(x)
 	x = pool_5x5(x,64,48,64,64,96,32)
-	x = SpatialDropout2D(.1)(x)
 	x = factor_5x5(x,80,48,80,64,96)
 	return x
 
@@ -98,18 +96,14 @@ def construct():
 	fishy_feats = Activation('relu')(fishy_feats)
 
 	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
-	class_1 = SpatialDropout2D(.1)(class_1)
 
 	class_2 = pool_5x5(class_1,85,64,85,64,128,43)
 	class_2 = BatchNormalization()(class_2)
-	class_2 = SpatialDropout2D(.1)(class_2)
 
 	class_3 = pool_5x5(class_2,106,80,106,106,160,54)
-	class_3 = SpatialDropout2D(.1)(class_3)
 
 	class_4 = pool_5x5(class_3,128,96,128,128,192,64)
 	class_4 = BatchNormalization()(class_4)
-	class_4 = SpatialDropout2D(.1)(class_4)
 
 	fcn = Flatten()(class_4)
 	fcn = Dropout(.5)(fcn)

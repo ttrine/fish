@@ -101,14 +101,12 @@ def construct():
 	class_1 = SpatialDropout2D(.1)(class_1)
 
 	class_2 = pool_5x5(class_1,85,64,85,64,128,43)
-	class_2 = BatchNormalization()(class_2)
 	class_2 = SpatialDropout2D(.1)(class_2)
 
 	class_3 = pool_5x5(class_2,106,80,106,106,160,54)
 	class_3 = SpatialDropout2D(.1)(class_3)
 
 	class_4 = pool_5x5(class_3,128,96,128,128,192,64)
-	class_4 = BatchNormalization()(class_4)
 	class_4 = SpatialDropout2D(.1)(class_4)
 
 	fcn = Flatten()(class_4)
