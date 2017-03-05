@@ -104,8 +104,8 @@ def construct():
 	fishy_feats = Activation('relu')(fishy_feats)
 
 	class_1 = pool_5x5(fishy_feats,64,48,64,64,96,32)
-	class_2 = pool_5x5(class_1,85,52,85,78,128,43)
-	class_3 = pool_5x5(class_2,106,52,106,78,160,54)
+	class_2 = pool_5x5(class_1,85,64,85,64,128,43)
+	class_3 = pool_5x5(class_2,106,80,106,106,160,54)
 	class_4 = pool_5x5(class_3,128,96,128,128,192,64)
 	
 	fcn = Flatten()(class_4)
