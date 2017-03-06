@@ -1,5 +1,5 @@
 from fish.classify import ClassifierContainer
-from experiments.final_submission_1.train import construct
+from experiments.final_submission_4.train import construct
 
 if __name__ == '__main__':
 	import sys # basic arg parsing, infer name
