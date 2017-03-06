@@ -47,13 +47,19 @@ class ClassifierContainer:
 
 	# Returns a generator that produces sequences to train against
 	def sample_gen(self,batch_size):
-		seed = 1 # For reproducibility
+		# We employ the bootstrap method to train several models and average their results.
+		bootstrap_inds = np.random.choice(len(self.X_train), len(self.X_train))
+		bootstrap_samps = self.X_train[bootstrap_inds]
+		bootstrap_classes = self.y_classes_train[bootstrap_inds]
+		bootstrap_masks = self.y_masks_train[bootstrap_inds]
+
+		seed = 1
 
 		image_datagen = ImageDataGenerator(**self.datagen_args)
 		mask_datagen = ImageDataGenerator(**self.datagen_args)
 
-		image_gen = image_datagen.flow(self.X_train,self.y_classes_train,batch_size=batch_size,seed=seed)
-		mask_gen = mask_datagen.flow(self.y_masks_train,None,batch_size=batch_size,seed=seed)
+		image_gen = image_datagen.flow(bootstrap_samps,bootstrap_classes,batch_size=batch_size,seed=seed)
+		mask_gen = mask_datagen.flow(bootstrap_masks,None,batch_size=batch_size,seed=seed)
 
 		while True:
 			images, classes = image_gen.next()
