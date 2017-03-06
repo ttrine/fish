@@ -49,6 +49,8 @@ class ClassifierContainer:
 	def sample_gen(self,batch_size):
 		# We employ the bootstrap method to train several models and average their results.
 		bootstrap_inds = np.random.choice(len(self.X_train), len(self.X_train))
+		print bootstrap_inds
+
 		bootstrap_samps = self.X_train[bootstrap_inds]
 		bootstrap_classes = self.y_classes_train[bootstrap_inds]
 		bootstrap_masks = self.y_masks_train[bootstrap_inds]
