@@ -5,5 +5,7 @@
 .DS_Store
 data
 *.jpg
-Todo.txt
+*.txt
 .Rproj.user
+*.png
+*.out

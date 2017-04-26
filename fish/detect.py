@@ -1,87 +1,80 @@
-import os, sys
-import csv, random
+import os, sys, csv
+import random
 import numpy as np
+import pandas
 import h5py
-from sklearn.model_selection import train_test_split
+
 from keras.callbacks import ModelCheckpoint
-from keras.optimizers import Adam
-from keras import backend as K
+from keras.utils import np_utils
+from keras.preprocessing.sequence import pad_sequences
 
-from fish.chunk import *
+from keras.preprocessing.image import ImageDataGenerator
 
-def read_boxes():
-	y_boxes_file = open("data/train/binary/y_boxes.csv",'rb')
-	box_reader = csv.reader(y_boxes_file)
-	box_reader.next() # skip header
-	y_boxes = [{'filename': box[0].split('/')[-1],'x1':int(box[1]),'y1':int(box[2]),'x2':int(box[3]),'y2':int(box[4])} for box in box_reader]
-	y_boxes_file.close()
-	d = {}
-	for box in y_boxes:
-		if box['filename'] in d:
-			d[box['filename']].append({'x1':box['x1'],'y1':box['y1'],'x2':box['x2'],'y2':box['y2']})
-		else:
-			d[box['filename']]=[{'x1':box['x1'],'y1':box['y1'],'x2':box['x2'],'y2':box['y2']}]
-	y_boxes = d
-	return y_boxes
+from fish.chunk import chunk_mask, chunk_image
 
 class DetectorContainer:
-	def __init__(self,name,model,n,optimizer=Adam(lr=1e-5)):
+	def __init__(self,name,model,n,optimizer,datagen_args=dict(),callbacks=[]):
+		# Set instance variables
 		self.name = name
+		self.n = n
+		self.datagen_args = datagen_args
 
+		# Compile model
 		model.compile(optimizer=optimizer, loss="binary_crossentropy")
+
 		self.model = model
 		
-		# Load raw-ish data, parceled out into splits
-		data = h5py.File('data/train/binary/data.h5','r')
-		self.X_train = data['X_train']
-		self.y_masks_train = data['y_masks_train']
-		self.y_boxes = read_boxes()
+		# Load train data
+		self.X_train = np.load('data/train/binary/X_train_2.npy')
 
-		try: # Test data must be precomputed
-			self.X_test = np.load('data/train/binary/X_test_chunks_'+str(n)+'.npy')
-			self.y_test = np.load('data/train/binary/y_test_chunks_'+str(n)+'.npy')
-		except:
-			print "Precomputed test data not found for that chunk size."
-			sys.exit()
+		y_masks_train = np.load('data/train/binary/y_masks_train_2.npy')
+		self.y_masks_train = y_masks_train.reshape((3021,487,866,1))
+	
+		y_classes_train = np.load('data/train/binary/y_classes_train.npy')
+		self.y_classes_train = np_utils.to_categorical(pandas.factorize(y_classes_train, sort=True)[0])
 
-		self.n = n
-		
+		# Load test data
+		self.X_test = np.load('data/train/binary/X_test_2.npy')
+		self.y_test_coverage = np.load('data/train/binary/y_test_coverage_mats_'+str(n)+'.npy')
+		self.y_classes_test = np.load('data/train/binary/y_classes_test_onehot.npy')
+
+		# Load eval data
 		eval_data = h5py.File("data/test_stg1/binary/eval_data.h5",'r')
-		self.X_eval = eval_data['X']
+		self.X_eval = eval_data['X_eval']
 		self.filenames_eval = np.load("data/test_stg1/binary/y_filenames.npy")
 
-	def sample_gen(self,batch_size): # Yield only coverage indicator
-		def sample_gen(batch_size): # Yield full BB label
-			random.seed(1) # For reproducibility
-			chunks = []
-			labels = []
-			filenames = []
-			while True:
-				# Get random image and its labels
-				index = random.sample(range(len(self.X_train)),1)[0]
-				img = self.X_train[index]
-				mask = self.y_masks_train[index]
-				filename = self.y_filenames_train[index].split('/')[-1]
-				img_chunks,chunk_labels,filename = chunk_detector(self.n,self.y_boxes,img,mask,filename)
-				chunks.extend(img_chunks)
-				labels.extend(chunk_labels)
-				filenames.extend(filename)
-				if len(chunks) >= batch_size:
-					# Randomize, cast, yield
-					shuffle = random.sample(range(len(chunks)),len(chunks))
-					sample_chunks = np.array(chunks)[shuffle].astype(np.float32)[0:batch_size]
-					sample_labels = np.array(labels)[shuffle][0:batch_size]
-					sample_filenames = np.array(filenames)[shuffle][0:batch_size]
-					yield (sample_chunks,sample_labels)
-					# Keep leftover samples for next epoch
-					chunks = list(chunks[batch_size:len(chunks)])
-					labels = list(labels[batch_size:len(labels)])
+		self.callbacks = callbacks
 
-		gen = sample_gen(batch_size)
+	# Returns a generator that produces sequences to train against
+	def sample_gen(self,batch_size):
+		seed = 1 # For reproducibility
+
+		image_datagen = ImageDataGenerator(**self.datagen_args)
+		mask_datagen = ImageDataGenerator(**self.datagen_args)
+
+		image_gen = image_datagen.flow(self.X_train,self.y_classes_train,batch_size=batch_size,seed=seed)
+		mask_gen = mask_datagen.flow(self.y_masks_train,None,batch_size=batch_size,seed=seed)
+
 		while True:
-			chunks, labels = gen.next()
-			isfish_labels = labels[:,-1].astype(np.float32)
-			yield (chunks,isfish_labels)
+			images, classes = image_gen.next()
+			masks = mask_gen.next()
+			if masks.shape != ((batch_size,487, 866,1)): # Fix unknown wrong-shape error during reshape
+				continue
+			masks = masks.reshape((batch_size,487, 866))
+
+			coverage_matrices = []
+			class_labels = []
+			for i in range(len(images)):
+				chunk_matrix = chunk_image(self.n,images[i], 2)
+				coverage_matrix = chunk_mask(self.n, chunk_matrix, masks[i], 2)
+				
+				coverage_matrices.append(coverage_matrix)
+				class_labels.append(classes[i])
+
+			coverage_matrices = np.array(coverage_matrices)
+			class_labels = np.array(class_labels)
+
+			yield images, coverage_matrices
 
 	def train(self, weight_file=None, nb_epoch=40, batch_size=500, samples_per_epoch=10000):
 		model_folder = 'experiments/' + self.name + '/weights/'
@@ -92,28 +85,8 @@ class DetectorContainer:
 			self.model.load_weights(model_folder+self.name+weight_file)
 		
 		model_checkpoint = ModelCheckpoint(model_folder+'{epoch:002d}-{val_loss:.4f}.hdf5', monitor='loss')
+		self.callbacks.append(model_checkpoint)
 		train_gen = self.sample_gen(batch_size)
-		
-		# Convert test labels to coverage only
-		y_test = self.y_test[:,-1].astype(np.float32)
 
 		self.model.fit_generator(train_gen, samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch, 
-			validation_data=(self.X_test,y_test), verbose=1, callbacks=[model_checkpoint])
-
-	''' Produce matrix of scores for each chunk in each evaluation image. '''
-	def evaluate(self,weight_file):
-		self.model.load_weights('experiments/'+self.name+'/weights/'+weight_file)
-
-		chunks = []
-		predictions = []
-		for ind in range(len(self.X_eval)):
-			img_chunks = chunk_image(self.n,self.X_eval[ind])
-			img_predictions = np.zeros(img_chunks.shape)
-			if ind % 50 == 0: print str(ind) + " images processed by detector."
-			for i in range(img_chunks.shape[0]):
-				for j in range(img_chunks.shape[1]):
-					if img_chunks[i,j] is None: continue # Don't attempt inference on all-black chunks
-					img_predictions[i,j] = self.model.predict(img_chunks[i,j].reshape(1,self.n,self.n,3).astype(np.float32))
-			chunks.append(img_chunks)
-			predictions.append(img_predictions)
-		return chunks,predictions
+			validation_data=(self.X_test,self.y_test_coverage), verbose=1, callbacks=self.callbacks)
